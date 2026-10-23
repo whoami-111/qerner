@@ -53,13 +53,13 @@ def init_db():
         data TEXT NOT NULL, created_at VARCHAR(255) NOT NULL
     )""")
     
-    # Таблица взаимодействий (заменили user на user_name)
+    # Таблица взаимодействий
     c.execute("""CREATE TABLE IF NOT EXISTS interactions (
         id SERIAL PRIMARY KEY, client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
         channel VARCHAR(50), subject VARCHAR(255), body TEXT, user_name VARCHAR(100), created_at VARCHAR(255) NOT NULL
     )""")
     
-    # Таблица аудита (заменили user на user_name)
+    # Таблица аудита
     c.execute("""CREATE TABLE IF NOT EXISTS audit (
         id SERIAL PRIMARY KEY, action VARCHAR(50) NOT NULL, entity VARCHAR(255),
         details TEXT, user_name VARCHAR(100), ip VARCHAR(50), created_at VARCHAR(255) NOT NULL
@@ -106,7 +106,6 @@ def require_auth(f):
 def log_action(action, entity="", details="", user="system"):
     conn = get_db()
     c = conn.cursor()
-    # Заменили user на user_name
     c.execute("INSERT INTO audit (action,entity,details,user_name,ip,created_at) VALUES (%s,%s,%s,%s,%s,%s)",
                  (action, entity, details, user, request.remote_addr or "", now_iso()))
     conn.close()
@@ -242,8 +241,15 @@ def create_client():
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
         (order, d.get("full_name", ""), d.get("phone", ""), d.get("telegram", ""), d.get("viber", ""), d.get("preferred_messenger", "phone"), d.get("city", ""), d.get("district", ""), d.get("address", ""), d.get("tech_type", ""), d.get("tech_model", ""), d.get("problem", ""), d.get("company", ""), d.get("edrpou", ""), d.get("notes", ""), d.get("source", ""), d.get("status", "active"), g.user["username"], now, now))
     cid = c.fetchone()["id"]
+    
+    # Безопасное сохранение фото (если фото не влезет, клиент всё равно сохранится)
     for photo in d.get("photos", []):
-        c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now))
+        try:
+            c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now))
+        except Exception as e:
+            print(f"Ошибка сохранения фото: {e}")
+            continue
+            
     conn.close()
     log_action("client_create", order, f"{d.get('full_name')}", g.user["username"])
     return jsonify({"ok": True, "id": cid, "order_number": order})
@@ -275,7 +281,12 @@ def update_client(cid):
     if "photos" in d:
         c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
         for photo in d["photos"]:
-            c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
+            try:
+                c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
+            except Exception as e:
+                print(f"Ошибка сохранения фото: {e}")
+                continue
+                
     conn.close()
     log_action("client_update", row["order_number"], f"{d.get('full_name')}", g.user["username"])
     return jsonify({"ok": True})
@@ -315,7 +326,6 @@ def add_interaction(cid):
     c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT order_number FROM clients WHERE id=%s", (cid,))
     row = c.fetchone()
-    # Заменили user на user_name
     c.execute("INSERT INTO interactions (client_id,channel,subject,body,user_name,created_at) VALUES (%s,%s,%s,%s,%s,%s)", (cid, d.get("channel", "note"), d.get("subject", ""), d.get("body", ""), g.user["username"], now_iso()))
     conn.close()
     log_action("interaction_add", row["order_number"] if row else "", d.get("channel", ""), g.user["username"])
