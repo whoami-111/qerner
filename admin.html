@@ -1244,23 +1244,24 @@ async function confirmClearAudit(e) {
   var u = document.getElementById('clear-username').value.trim();
   var p = document.getElementById('clear-password').value;
   
-  if (u !== 'root') {
-    toast('Тільки root може очищати журнал', true);
+  if (!u || !p) {
+    toast('Заповніть усі поля', true);
     return;
   }
 
   try {
-    // Проверяем пароль через логин
-    await api('/api/login', {method:'POST', body:{username:u, password:p}});
-    
-    // Если пароль верный — очищаем
-    await api('/api/audit/clear', {method:'POST'});
+    // Отправляем логин и пароль прямо в защищенный эндпоинт
+    await api('/api/audit/clear', {
+        method: 'POST', 
+        body: { username: u, password: p }
+    });
     
     toast('Журнал успішно очищено');
     closeModal();
     renderAudit();
   } catch(err) {
-    toast(err.message || 'Невірний пароль', true);
+    // Сервер вернет либо "Неверный пароль", либо "Недостаточно прав"
+    toast(err.message || 'Помилка', true);
   }
 }
 window.confirmClearAudit = confirmClearAudit;
