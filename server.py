@@ -9,11 +9,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 # --- Настройки ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# На Render файловая система временная, поэтому используем /tmp для базы
-if os.environ.get("RENDER"):
-    DB_PATH = "/tmp/qerner.db"
-else:
-    DB_PATH = os.path.join(BASE_DIR, "qerner.db")
+# Используем in-memory базу данных, чтобы обойти проблемы с файловой системой на Render
+DB_PATH = "file:qerner?mode=memory&cache=shared"
 
 app = Flask(__name__, static_folder=None)
 CORS(app, supports_credentials=True)
@@ -23,7 +20,7 @@ SESSION_TTL_HOURS = 24 * 7
 
 # --- БАЗА ДАННЫХ ---
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, uri=True)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
