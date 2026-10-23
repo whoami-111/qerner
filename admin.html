@@ -1231,7 +1231,7 @@ function openClearAudit() {
     'Увага! Ця дія видалить ВСІ записи журналу назавжди. Рекомендуємо спочатку скачати копію.'+
     '</div>'+
     '<div style="margin-bottom:16px"><button type="button" class="btn" onclick="downloadAudit()" style="width:100%;justify-content:center">↓ Скачати журнал перед очищенням (Excel)</button></div>'+
-    '<div class="form-row full"><div class="form-group"><label>Логін (тільки root)</label><input class="form-input mono" id="clear-username" required placeholder="root"></div></div>'+
+    '<div class="form-row full"><div class="form-group"><label>Логін адміністратора</label><input class="form-input mono" id="clear-username" required></div></div>'+
     '<div class="form-row full"><div class="form-group"><label>Пароль</label><input class="form-input" type="password" id="clear-password" required></div></div>'+
     '</div><div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">Скасувати</button><button type="submit" class="btn danger">Очистити назавжди</button></div></form>';
   document.getElementById('modal-content').innerHTML = html;
