@@ -311,10 +311,10 @@ tbody tr:last-child td{border-bottom:none}
 <!-- SETUP -->
 <div id="setup-screen">
   <div class="setup-card">
-    <h2>Підключення до сервера</h2>
-    <p>Введіть адресу вашого Qerner Server.</p>
+    <h2 data-i18n="setup_title">Підключення до сервера</h2>
+    <p data-i18n="setup_desc">Введіть адресу вашого Qerner Server.</p>
     <input type="text" id="setup-url" placeholder="https://qerner.onrender.com" value="">
-    <button onclick="saveServerUrl()">Підключитися</button>
+    <button onclick="saveServerUrl()" data-i18n="setup_btn">Підключитися</button>
   </div>
 </div>
 
@@ -326,10 +326,10 @@ tbody tr:last-child td{border-bottom:none}
       <div class="login-brand-text">Qerner<small>Secure Access</small></div>
     </div>
     <div class="login-error" id="login-error"></div>
-    <div><label>Логін</label><input id="login-username" autocomplete="username" required></div>
-    <div><label>Пароль</label><input id="login-password" type="password" autocomplete="current-password" required></div>
-    <button type="submit" class="btn-login">Увійти</button>
-    <div class="login-footer"><a onclick="resetServer()">Змінити сервер</a></div>
+    <div><label data-i18n="login_user">Логін</label><input id="login-username" autocomplete="username" required></div>
+    <div><label data-i18n="login_pass">Пароль</label><input id="login-password" type="password" autocomplete="current-password" required></div>
+    <button type="submit" class="btn-login" data-i18n="login_btn">Увійти</button>
+    <div class="login-footer"><a onclick="resetServer()" data-i18n="login_reset">Змінити сервер</a></div>
   </form>
 </div>
 
@@ -342,18 +342,18 @@ tbody tr:last-child td{border-bottom:none}
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section">
-        <div class="nav-section-title">Огляд</div>
-        <div class="nav-item active" data-page="dashboard"><span class="nav-icon">▤</span>Дашборд</div>
-        <div class="nav-item" data-page="analytics"><span class="nav-icon">◫</span>Аналітика</div>
+        <div class="nav-section-title" data-i18n="menu_overview">Огляд</div>
+        <div class="nav-item active" data-page="dashboard"><span class="nav-icon">▤</span><span data-i18n="menu_dash">Дашборд</span></div>
+        <div class="nav-item" data-page="analytics"><span class="nav-icon">◫</span><span data-i18n="menu_analytics">Аналітика</span></div>
       </div>
       <div class="nav-section">
-        <div class="nav-section-title">База</div>
-        <div class="nav-item" data-page="clients"><span class="nav-icon">◍</span>Клієнти<span class="nav-badge" id="badge-clients">0</span></div>
+        <div class="nav-section-title" data-i18n="menu_db">База</div>
+        <div class="nav-item" data-page="clients"><span class="nav-icon">◍</span><span data-i18n="menu_clients">Клієнти</span><span class="nav-badge" id="badge-clients">0</span></div>
       </div>
       <div class="nav-section">
-        <div class="nav-section-title">Система</div>
-        <div class="nav-item" data-page="audit"><span class="nav-icon">▦</span>Журнал</div>
-        <div class="nav-item" data-page="settings"><span class="nav-icon">⚙</span>Налаштування</div>
+        <div class="nav-section-title" data-i18n="menu_sys">Система</div>
+        <div class="nav-item" data-page="audit"><span class="nav-icon">▦</span><span data-i18n="menu_audit">Журнал</span></div>
+        <div class="nav-item" data-page="settings"><span class="nav-icon">⚙</span><span data-i18n="menu_settings">Налаштування</span></div>
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -369,7 +369,7 @@ tbody tr:last-child td{border-bottom:none}
           <div class="name" id="dd-name">root</div>
           <div class="email" id="dd-email">root@qerner.local</div>
         </div>
-        <div class="user-dropdown-item danger" onclick="logout()">⎋ Вийти</div>
+        <div class="user-dropdown-item danger" onclick="logout()"><span data-i18n="menu_logout">Вийти</span></div>
       </div>
     </div>
   </aside>
@@ -377,39 +377,39 @@ tbody tr:last-child td{border-bottom:none}
   <main class="main">
     <div class="topbar">
       <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-      <div class="topbar-breadcrumb" id="breadcrumb">Дашборд</div>
+      <div class="topbar-breadcrumb" id="breadcrumb" data-i18n="menu_dash">Дашборд</div>
       <div class="topbar-spacer"></div>
-      <!-- Убрал кнопку "Добавить" из шапки -->
+      <!-- Убрал кнопку добавления из шапки -->
     </div>
 
     <div class="content" id="content">
       <div class="page active" id="page-dashboard">
         <div class="page-head">
-          <div><div class="page-title">Дашборд</div><div class="page-desc" id="today-date"></div></div>
+          <div><div class="page-title" data-i18n="menu_dash">Дашборд</div><div class="page-desc" id="today-date"></div></div>
           <div class="page-actions">
-            <button class="btn primary" onclick="openClientForm()">+ Новий клієнт</button>
+            <button class="btn primary" onclick="openClientForm()">+ <span data-i18n="btn_new_client">Новий клієнт</span></button>
           </div>
         </div>
         <div class="metrics" id="dashboard-metrics"></div>
         <div class="grid-2">
-          <div class="panel"><div class="panel-head"><div class="panel-title">Джерела клієнтів</div></div><div class="panel-body" id="chart-sources"></div></div>
-          <div class="panel"><div class="panel-head"><div class="panel-title">Техніка</div></div><div class="panel-body" id="chart-tech"></div></div>
+          <div class="panel"><div class="panel-head"><div class="panel-title" data-i18n="chart_src">Джерела клієнтів</div></div><div class="panel-body" id="chart-sources"></div></div>
+          <div class="panel"><div class="panel-head"><div class="panel-title" data-i18n="chart_tech">Техніка</div></div><div class="panel-body" id="chart-tech"></div></div>
         </div>
-        <div class="panel"><div class="panel-head"><div class="panel-title">Остання активність</div><button class="btn sm" onclick="showPage('clients')">Всі →</button></div><div class="panel-body flush"><div id="recent-table"></div></div></div>
+        <div class="panel"><div class="panel-head"><div class="panel-title" data-i18n="dash_recent">Остання активність</div><button class="btn sm" onclick="showPage('clients')"><span data-i18n="btn_all">Всі</span> →</button></div><div class="panel-body flush"><div id="recent-table"></div></div></div>
       </div>
 
       <div class="page" id="page-clients">
         <div class="page-head">
-          <div><div class="page-title">Клієнти</div><div class="page-desc"><span id="clients-count-label">0</span> записів</div></div>
+          <div><div class="page-title" data-i18n="menu_clients">Клієнти</div><div class="page-desc"><span id="clients-count-label">0</span> <span data-i18n="clients_records">записів</span></div></div>
           <div class="page-actions">
-            <button class="btn" id="btn-export-excel" onclick="exportExcel()" style="display:none">↓ Excel</button>
-            <button class="btn primary" onclick="openClientForm()">+ Новий</button>
+            <button class="btn" id="btn-export-excel" onclick="exportExcel()" style="display:none" data-i18n="btn_excel">↓ Excel</button>
+            <button class="btn primary" onclick="openClientForm()">+ <span data-i18n="btn_new">Новий</span></button>
           </div>
         </div>
         <div class="filter-bar">
           <div class="filter-group filter-search"><input id="search" placeholder="Пошук..." oninput="onSearchChange()"></div>
-          <div class="filter-group"><select id="filter-source" onchange="renderClients()"><option value="">Джерела</option><option value="walkin">Проходняк</option><option value="site">Сайт</option><option value="ad">Оголошення</option><option value="repeat">Повторний</option></select></div>
-          <div class="filter-group"><select id="filter-tech" onchange="renderClients()"><option value="">Техніка</option><option value="tv">ТВ</option><option value="pc">ПК</option><option value="laptop">Ноутбук</option><option value="console">Приставка</option></select></div>
+          <div class="filter-group"><select id="filter-source" onchange="renderClients()"><option value=""><span data-i18n="filter_src">Джерела</span></option><option value="walkin">Проходняк</option><option value="site">Сайт</option><option value="ad">Оголошення</option><option value="repeat">Повторний</option></select></div>
+          <div class="filter-group"><select id="filter-tech" onchange="renderClients()"><option value=""><span data-i18n="filter_tech">Техніка</span></option><option value="tv">ТВ</option><option value="pc">ПК</option><option value="laptop">Ноутбук</option><option value="console">Приставка</option></select></div>
         </div>
         <div class="table-wrap"><div id="clients-table"></div></div>
         <div class="cards-list" id="clients-cards"></div>
@@ -417,23 +417,22 @@ tbody tr:last-child td{border-bottom:none}
       </div>
 
       <div class="page" id="page-client-detail">
-        <div class="page-head"><button class="btn" onclick="showPage('clients')">← Назад</button></div>
+        <div class="page-head"><button class="btn" onclick="showPage('clients')" data-i18n="btn_back">← Назад</button></div>
         <div id="client-detail-content"></div>
       </div>
 
       <div class="page" id="page-analytics">
-        <div class="page-head"><div><div class="page-title">Аналітика</div></div></div>
+        <div class="page-head"><div><div class="page-title" data-i18n="menu_analytics">Аналітика</div></div></div>
         <div id="analytics-view"></div>
       </div>
 
       <div class="page" id="page-audit">
-        <div class="page-head"><div><div class="page-title">Журнал</div></div></div>
+        <div class="page-head"><div><div class="page-title" data-i18n="menu_audit">Журнал</div></div></div>
         <div class="table-wrap"><div id="audit-table"></div></div>
       </div>
 
-      <!-- НАСТРОЙКИ -->
       <div class="page" id="page-settings">
-        <div class="page-head"><div><div class="page-title">Налаштування</div><div class="page-desc">Управління системою</div></div></div>
+        <div class="page-head"><div><div class="page-title" data-i18n="menu_settings">Налаштування</div></div></div>
         <div class="settings-layout">
           <div class="settings-nav" id="settings-nav"></div>
           <div class="settings-content" id="settings-content"></div>
@@ -446,7 +445,7 @@ tbody tr:last-child td{border-bottom:none}
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <div class="modal-head">
-      <div class="modal-title" id="modal-title">Клієнт</div>
+      <div class="modal-title" id="modal-title">...</div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div id="modal-content"></div>
@@ -468,6 +467,40 @@ tbody tr:last-child td{border-bottom:none}
 (function(){
 'use strict';
 
+/* ============ I18N СЛОВАРИ ============ */
+var I18N = {
+  uk: {
+    setup_title: 'Підключення до сервера', setup_desc: 'Введіть адресу вашого Qerner Server.', setup_btn: 'Підключитися',
+    login_user: 'Логін', login_pass: 'Пароль', login_btn: 'Увійти', login_reset: 'Змінити сервер',
+    menu_overview: 'Огляд', menu_dash: 'Дашборд', menu_analytics: 'Аналітика',
+    menu_db: 'База', menu_clients: 'Клієнти', menu_sys: 'Система', menu_audit: 'Журнал', menu_settings: 'Налаштування',
+    menu_logout: 'Вийти', btn_new_client: 'Новий клієнт', btn_all: 'Всі', btn_excel: '↓ Excel', btn_new: 'Новий',
+    btn_back: '← Назад', clients_records: 'записів', filter_src: 'Джерела', filter_tech: 'Техніка',
+    chart_src: 'Джерела клієнтів', chart_tech: 'Техніка', dash_recent: 'Остання активність',
+    settings_profile: 'Профіль', settings_security: 'Безпека', settings_lang: 'Мова', settings_users: 'Користувачі'
+  },
+  ru: {
+    setup_title: 'Подключение к серверу', setup_desc: 'Введите адрес вашего Qerner Server.', setup_btn: 'Подключиться',
+    login_user: 'Логин', login_pass: 'Пароль', login_btn: 'Войти', login_reset: 'Сменить сервер',
+    menu_overview: 'Обзор', menu_dash: 'Дашборд', menu_analytics: 'Аналитика',
+    menu_db: 'База', menu_clients: 'Клиенты', menu_sys: 'Система', menu_audit: 'Журнал', menu_settings: 'Настройки',
+    menu_logout: 'Выйти', btn_new_client: 'Новый клиент', btn_all: 'Все', btn_excel: '↓ Excel', btn_new: 'Новый',
+    btn_back: '← Назад', clients_records: 'записей', filter_src: 'Источники', filter_tech: 'Техника',
+    chart_src: 'Источники клиентов', chart_tech: 'Техника', dash_recent: 'Последняя активность',
+    settings_profile: 'Профиль', settings_security: 'Безопасность', settings_lang: 'Язык', settings_users: 'Пользователи'
+  },
+  en: {
+    setup_title: 'Server Connection', setup_desc: 'Enter your Qerner Server address.', setup_btn: 'Connect',
+    login_user: 'Login', login_pass: 'Password', login_btn: 'Sign In', login_reset: 'Change Server',
+    menu_overview: 'Overview', menu_dash: 'Dashboard', menu_analytics: 'Analytics',
+    menu_db: 'Database', menu_clients: 'Clients', menu_sys: 'System', menu_audit: 'Audit', menu_settings: 'Settings',
+    menu_logout: 'Logout', btn_new_client: 'New Client', btn_all: 'All', btn_excel: '↓ Excel', btn_new: 'New',
+    btn_back: '← Back', clients_records: 'records', filter_src: 'Sources', filter_tech: 'Tech',
+    chart_src: 'Client Sources', chart_tech: 'Tech', dash_recent: 'Recent Activity',
+    settings_profile: 'Profile', settings_security: 'Security', settings_lang: 'Language', settings_users: 'Users'
+  }
+};
+
 var API_BASE='';
 var TOKEN_KEY='qerner_token';
 var URL_KEY='qerner_server_url';
@@ -480,6 +513,22 @@ var currentPhotoIndex=0,currentPhotoList=[];
 
 var SOURCES={walkin:{code:'X',label:'Проходняк'},site:{code:'D',label:'Сайт'},ad:{code:'S',label:'Оголошення'},repeat:{code:'X1',label:'Повторний'}};
 var TECHNOLOGIES={tv:'ТВ',pc:'ПК',laptop:'Ноутбук',console:'Ігрова приставка'};
+
+function tr(key) {
+  var lang = (currentUser && currentUser.lang) || 'uk';
+  return (I18N[lang] && I18N[lang][key]) || I18N['uk'][key] || key;
+}
+
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    if (I18N[currentUser?.lang || 'uk'] && I18N[currentUser?.lang || 'uk'][key]) {
+      el.textContent = I18N[currentUser?.lang || 'uk'][key];
+    } else if (I18N['uk'][key]) {
+      el.textContent = I18N['uk'][key];
+    }
+  });
+}
 
 function sourceLabel(c){return SOURCES[c]?SOURCES[c].label:c;}
 function sourceCode(c){return SOURCES[c]?SOURCES[c].code:'?';}
@@ -574,12 +623,14 @@ async function startApp(){
   document.getElementById('dd-name').textContent=currentUser.username;
   document.getElementById('dd-email').textContent=currentUser.email||'';
   document.getElementById('btn-export-excel').style.display=currentUser.role==='root'?'':'none';
+  
+  applyLang(); // Применяем язык при старте
   showApp();
   await loadClients();
   showPage('dashboard');
 }
 
-var PAGE_TITLES={dashboard:'Дашборд',clients:'Клієнти','client-detail':'Клієнт',analytics:'Аналітика',audit:'Журнал',settings:'Налаштування'};
+var PAGE_TITLES={dashboard:'menu_dash',clients:'menu_clients','client-detail':'menu_clients',analytics:'menu_analytics',audit:'menu_audit',settings:'menu_settings'};
 function showPage(name){
   var pages=document.querySelectorAll('.page');
   for(var i=0;i<pages.length;i++)pages[i].classList.remove('active');
@@ -587,7 +638,7 @@ function showPage(name){
   for(var j=0;j<navs.length;j++)navs[j].classList.remove('active');
   var pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');
   var link=document.querySelector('.nav-item[data-page="'+name+'"]');if(link)link.classList.add('active');
-  document.getElementById('breadcrumb').textContent=PAGE_TITLES[name]||name;
+  document.getElementById('breadcrumb').textContent=tr(PAGE_TITLES[name]||'menu_dash');
   toggleSidebar(true);
   if(name==='dashboard')renderDashboard();
   if(name==='clients')renderClients();
@@ -899,10 +950,10 @@ async function renderAudit(){
 
 /* НАСТРОЙКИ */
 var SETTINGS_TABS=[
-  {id:'profile',label:'Профіль',icon:'👤'},
-  {id:'security',label:'Безпека',icon:'🔒'},
-  {id:'language',label:'Мова',icon:'🌐'},
-  {id:'users',label:'Користувачі',icon:'👥',rootOnly:true}
+  {id:'profile',label:'settings_profile',icon:'👤'},
+  {id:'security',label:'settings_security',icon:'🔒'},
+  {id:'language',label:'settings_lang',icon:'🌐'},
+  {id:'users',label:'settings_users',icon:'👥',rootOnly:true}
 ];
 
 function renderSettings(){
@@ -911,7 +962,7 @@ function renderSettings(){
   SETTINGS_TABS.forEach(function(tab){
     if(tab.rootOnly&&currentUser.role!=='root')return;
     var active=state.settingsTab===tab.id?' active':'';
-    html+='<div class="settings-nav-item'+active+'" onclick="setSettingsTab(\''+tab.id+'\')">'+tab.icon+' '+tab.label+'</div>';
+    html+='<div class="settings-nav-item'+active+'" onclick="setSettingsTab(\''+tab.id+'\')">'+tab.icon+' '+tr(tab.label)+'</div>';
   });
   nav.innerHTML=html;
   renderSettingsContent();
@@ -924,13 +975,13 @@ function renderSettingsContent(){
   var tab=state.settingsTab;
 
   if(tab==='profile'){
-    el.innerHTML='<h3>Мій профіль</h3>'+
-      '<div class="settings-row"><div class="settings-row-label"><div class="name">Логін</div><div class="hint">Ваш логін в системі</div></div><div><span class="role-badge">'+esc(currentUser.username)+'</span></div></div>'+
+    el.innerHTML='<h3>'+tr('settings_profile')+'</h3>'+
+      '<div class="settings-row"><div class="settings-row-label"><div class="name">'+tr('login_user')+'</div><div class="hint">Ваш логін в системі</div></div><div><span class="role-badge">'+esc(currentUser.username)+'</span></div></div>'+
       '<div class="settings-row"><div class="settings-row-label"><div class="name">Email</div><div class="hint">Контактна пошта</div></div><div><input class="settings-input" value="'+esc(currentUser.email||'')+'" disabled></div></div>'+
       '<div class="settings-row"><div class="settings-row-label"><div class="name">Роль</div><div class="hint">Рівень доступу</div></div><div><span class="role-badge '+currentUser.role+'">'+currentUser.role+'</span></div></div>';
   }
   else if(tab==='security'){
-    el.innerHTML='<h3>Безпека</h3>'+
+    el.innerHTML='<h3>'+tr('settings_security')+'</h3>'+
       '<div class="settings-row"><div class="settings-row-label"><div class="name">Змінити пароль</div><div class="hint">Мінімум 8 символів</div></div><div><button class="btn" onclick="openChangePassword()">Змінити</button></div></div>'+
       '<div class="settings-row"><div class="settings-row-label"><div class="name">Тема інтерфейсу</div><div class="hint">Темна або світла</div></div><div><select class="settings-select" onchange="toggleTheme(this.value)"><option value="dark">Темна</option><option value="light">Світла</option></select></div></div>';
   }
@@ -941,9 +992,9 @@ function renderSettingsContent(){
       {code:'ru',flag:'🇷🇺',name:'Русский'},
       {code:'en',flag:'🇬🇧',name:'English'}
     ];
-    var html='<h3>Мова інтерфейсу</h3><div style="font-size:13px;color:var(--text-2);margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">Змінюється тільки для вашого облікового запису.</div>';
+    var html='<h3>'+tr('settings_lang')+'</h3><div style="font-size:13px;color:var(--text-2);margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">Змінюється тільки для вашого облікового запису.</div>';
     langs.forEach(function(l){html+='<div class="lang-opt '+(active===l.code?'selected':'')+'" onclick="selectLang(\''+l.code+'\')"><div class="lang-opt-flag">'+l.flag+'</div><div class="lang-opt-info"><div class="lang-opt-name">'+l.name+'</div></div><div class="lang-opt-check">'+(active===l.code?'✓':'')+'</div></div>';});
-    html+='<div class="lang-actions"><button class="btn" onclick="cancelLang()">Скасувати</button><button class="btn primary" onclick="applyLang()" '+(active===currentUser.lang?'disabled':'')+'>Застосувати</button></div>';
+    html+='<div class="lang-actions"><button class="btn" onclick="cancelLang()">Скасувати</button><button class="btn primary" onclick="applyLangBtn()" '+(active===currentUser.lang?'disabled':'')+'>Застосувати</button></div>';
     el.innerHTML=html;
   }
   else if(tab==='users'){
@@ -954,16 +1005,23 @@ function selectLang(code){state.pendingLang=code;renderSettingsContent();}
 window.selectLang=selectLang;
 function cancelLang(){state.pendingLang=null;renderSettingsContent();}
 window.cancelLang=cancelLang;
-async function applyLang(){
+async function applyLangBtn(){
   if(!state.pendingLang||state.pendingLang===currentUser.lang){toast('Мова не змінена',true);return;}
-  try{await api('/api/me/lang',{method:'POST',body:{lang:state.pendingLang}});currentUser.lang=state.pendingLang;state.pendingLang=null;toast('Мову збережено');renderSettingsContent();}
-  catch(e){toast(e.message,true);}
+  try{
+    await api('/api/me/lang',{method:'POST',body:{lang:state.pendingLang}});
+    currentUser.lang=state.pendingLang;
+    state.pendingLang=null;
+    applyLang(); // Перерисовываем интерфейс
+    renderSettingsContent();
+    renderDashboard(); // Обновляем текущую страницу
+    toast('Мову збережено');
+  }catch(e){toast(e.message,true);}
 }
-window.applyLang=applyLang;
+window.applyLangBtn=applyLangBtn;
 
 async function renderUsersTab(el){
   var users=[];try{users=await api('/api/users');}catch(e){}
-  var html='<h3>Користувачі</h3><div style="font-size:13px;color:var(--text-2);margin-bottom:16px">Тільки root може створювати адмінів.</div>';
+  var html='<h3>'+tr('settings_users')+'</h3><div style="font-size:13px;color:var(--text-2);margin-bottom:16px">Тільки root може створювати адмінів.</div>';
   html+='<div style="margin-bottom:14px"><button class="btn primary" onclick="openUserForm()">+ Додати адміністратора</button></div>';
   html+='<table class="users-table"><thead><tr><th>Логін</th><th>Email</th><th>Роль</th><th>Активний</th><th></th></tr></thead><tbody>';
   users.forEach(function(u){html+='<tr><td style="font-family:var(--mono);font-weight:600">'+esc(u.username)+(u.role==='root'?' 👑':'')+'</td><td style="font-size:11.5px;color:var(--text-2)">'+esc(u.email||'—')+'</td><td><span class="role-badge '+u.role+'">'+u.role+'</span></td><td>'+(u.active?'✅':'❌')+'</td><td>'+(u.role==='root'?'':'<button class="btn sm icon danger" onclick="deleteUser('+u.id+')">✕</button>')+'</td></tr>';});
@@ -1012,17 +1070,75 @@ async function deleteUser(id){
 }
 window.deleteUser=deleteUser;
 
-/* EXCEL */
+/* EXCEL (КРАСИВЫЙ HTML-ЭКСПОРТ) */
 function exportExcel(){
   if(!currentUser||currentUser.role!=='root'){toast('Тільки root',true);return;}
   if(!clientsCache.length){toast('Немає даних',true);return;}
-  var headers=['№','Порядковий','ПІБ','Джерело','Код','Телефон','Telegram','Viber','Місто','Район','Адреса','Техніка','Модель','Проблема','Статус','Заніс','Фото','Створено'];
-  var rows=clientsCache.slice().sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);}).map(function(c,i){
-    return [c.order_number||'',i+1,c.full_name||'',sourceLabel(c.source),sourceCode(c.source),c.phone||'',c.telegram||'',c.viber||'',c.city||'',c.district||'',c.address||'',c.tech_type?techLabel(c.tech_type):'',c.tech_model||'',(c.problem||'').replace(/[\r\n]+/g,' '),statusLabel(c.status),c.created_by||'',(c.photos||[]).length,c.created_at?new Date(c.created_at).toLocaleString('uk-UA'):''];
+
+  var headers = ['№', 'Порядковий', 'ПІБ', 'Джерело', 'Код', 'Телефон', 'Telegram', 'Viber', 'Місто', 'Район', 'Адреса', 'Техніка', 'Модель', 'Проблема', 'Статус', 'Заніс', 'Фото', 'Створено'];
+  
+  var rows = clientsCache.slice().sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);}).map(function(c,i){
+    return [
+      c.order_number||'', i+1, c.full_name||'', sourceLabel(c.source), sourceCode(c.source),
+      c.phone||'', c.telegram||'', c.viber||'', c.city||'', c.district||'', c.address||'',
+      c.tech_type?techLabel(c.tech_type):'', c.tech_model||'', (c.problem||'').replace(/[\r\n]+/g,' '),
+      statusLabel(c.status), c.created_by||'', (c.photos||[]).length,
+      c.created_at?new Date(c.created_at).toLocaleString('uk-UA'):''
+    ];
   });
-  var csv=[headers].concat(rows).map(function(row){return row.map(function(cell){var s=String(cell==null?'':cell);if(/[,";\n]/.test(s))return '"'+s.replace(/"/g,'""')+'"';return s;}).join(';');}).join('\r\n');
-  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-  var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='qerner_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);toast('Експортовано '+rows.length+' записів');
+
+  // Собираем HTML-таблицу со стилями
+  var html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>';
+  html += 'table { border-collapse: collapse; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; }';
+  html += 'th { background-color: #1a1a1a; color: #ffffff; padding: 10px; border: 1px solid #333; text-align: left; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }';
+  html += 'td { padding: 8px 10px; border: 1px solid #cccccc; color: #333333; }';
+  html += 'tr:nth-child(even) td { background-color: #f9f9f9; }';
+  html += 'tr:hover td { background-color: #f1f5f9; }';
+  html += '.mono { font-family: Consolas, monospace; color: #0066cc; }';
+  html += '.status-active { color: #2e7d32; font-weight: bold; }';
+  html += '.status-vip { color: #7b1fa2; font-weight: bold; }';
+  html += '.status-lead { color: #ef6c00; font-weight: bold; }';
+  html += '.status-inactive { color: #757575; }';
+  html += '</style></head><body>';
+  
+  html += '<table><thead><tr>';
+  headers.forEach(function(h) { html += '<th>' + h + '</th>'; });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach(function(row) {
+    html += '<tr>';
+    row.forEach(function(cell, index) {
+      // Определяем классы для красивого вывода
+      var cls = '';
+      if (index === 0 || index === 5) cls = 'class="mono"';
+      if (index === 14) {
+        var st = String(cell).toLowerCase();
+        if (st === 'активний') cls = 'class="status-active"';
+        else if (st === 'vip') cls = 'class="status-vip"';
+        else if (st === 'лід') cls = 'class="status-lead"';
+        else if (st === 'неактивний') cls = 'class="status-inactive"';
+      }
+      // Форматируем номер телефона, чтобы Excel не превращал его в дату
+      var val = cell;
+      if (index === 5 || index === 7) {
+        val = '="' + cell + '"'; // Явно делаем строкой
+      }
+      html += '<td ' + cls + '>' + val + '</td>';
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></body></html>';
+
+  // Скачиваем как .xls
+  var blob = new Blob([html], {type: 'application/vnd.ms-excel'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'qerner_clients_' + new Date().toISOString().slice(0, 10) + '.xls';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Експортовано в Excel');
 }
 window.exportExcel=exportExcel;
 
