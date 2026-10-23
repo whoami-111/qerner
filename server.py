@@ -28,12 +28,16 @@ def now_iso():
 def init_db():
     conn = get_db()
     c = conn.cursor()
+    
+    # Таблица пользователей
     c.execute("""CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY, username VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255), password_hash VARCHAR(255) NOT NULL, role VARCHAR(50) NOT NULL DEFAULT 'admin',
         lang VARCHAR(10) NOT NULL DEFAULT 'uk', active INTEGER NOT NULL DEFAULT 1,
         locked INTEGER NOT NULL DEFAULT 0, created_at VARCHAR(255) NOT NULL
     )""")
+    
+    # Таблица клиентов
     c.execute("""CREATE TABLE IF NOT EXISTS clients (
         id SERIAL PRIMARY KEY, order_number VARCHAR(255) UNIQUE NOT NULL,
         full_name VARCHAR(255) NOT NULL, phone VARCHAR(50) NOT NULL, telegram VARCHAR(255), viber VARCHAR(50),
@@ -42,22 +46,31 @@ def init_db():
         source VARCHAR(50) NOT NULL, status VARCHAR(50) DEFAULT 'active', created_by VARCHAR(100),
         created_at VARCHAR(255) NOT NULL, updated_at VARCHAR(255) NOT NULL
     )""")
+    
+    # Таблица фото
     c.execute("""CREATE TABLE IF NOT EXISTS photos (
         id SERIAL PRIMARY KEY, client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
         data TEXT NOT NULL, created_at VARCHAR(255) NOT NULL
     )""")
+    
+    # Таблица взаимодействий (заменили user на user_name)
     c.execute("""CREATE TABLE IF NOT EXISTS interactions (
         id SERIAL PRIMARY KEY, client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-        channel VARCHAR(50), subject VARCHAR(255), body TEXT, user VARCHAR(100), created_at VARCHAR(255) NOT NULL
+        channel VARCHAR(50), subject VARCHAR(255), body TEXT, user_name VARCHAR(100), created_at VARCHAR(255) NOT NULL
     )""")
+    
+    # Таблица аудита (заменили user на user_name)
     c.execute("""CREATE TABLE IF NOT EXISTS audit (
         id SERIAL PRIMARY KEY, action VARCHAR(50) NOT NULL, entity VARCHAR(255),
-        details TEXT, user VARCHAR(100), ip VARCHAR(50), created_at VARCHAR(255) NOT NULL
+        details TEXT, user_name VARCHAR(100), ip VARCHAR(50), created_at VARCHAR(255) NOT NULL
     )""")
+    
+    # Счетчики заказов
     c.execute("""CREATE TABLE IF NOT EXISTS order_counters (
         prefix VARCHAR(10) PRIMARY KEY, counter INTEGER NOT NULL DEFAULT 0
     )""")
     
+    # Создаем root, если нет
     c.execute("SELECT id FROM users WHERE username='root'")
     if not c.fetchone():
         c.execute("""INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at)
@@ -93,7 +106,8 @@ def require_auth(f):
 def log_action(action, entity="", details="", user="system"):
     conn = get_db()
     c = conn.cursor()
-    c.execute("INSERT INTO audit (action,entity,details,user,ip,created_at) VALUES (%s,%s,%s,%s,%s,%s)",
+    # Заменили user на user_name
+    c.execute("INSERT INTO audit (action,entity,details,user_name,ip,created_at) VALUES (%s,%s,%s,%s,%s,%s)",
                  (action, entity, details, user, request.remote_addr or "", now_iso()))
     conn.close()
 
@@ -301,7 +315,8 @@ def add_interaction(cid):
     c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT order_number FROM clients WHERE id=%s", (cid,))
     row = c.fetchone()
-    c.execute("INSERT INTO interactions (client_id,channel,subject,body,user,created_at) VALUES (%s,%s,%s,%s,%s,%s)", (cid, d.get("channel", "note"), d.get("subject", ""), d.get("body", ""), g.user["username"], now_iso()))
+    # Заменили user на user_name
+    c.execute("INSERT INTO interactions (client_id,channel,subject,body,user_name,created_at) VALUES (%s,%s,%s,%s,%s,%s)", (cid, d.get("channel", "note"), d.get("subject", ""), d.get("body", ""), g.user["username"], now_iso()))
     conn.close()
     log_action("interaction_add", row["order_number"] if row else "", d.get("channel", ""), g.user["username"])
     return jsonify({"ok": True})
