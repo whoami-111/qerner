@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="format-detection" content="telephone=no">
 <title>Qerner Admin</title>
+<!-- Подключаем jsPDF для генерации документов -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -379,7 +381,6 @@ tbody tr:last-child td{border-bottom:none}
       <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
       <div class="topbar-breadcrumb" id="breadcrumb" data-i18n="menu_dash">Дашборд</div>
       <div class="topbar-spacer"></div>
-      <!-- Убрал кнопку добавления из шапки -->
     </div>
 
     <div class="content" id="content">
@@ -511,8 +512,16 @@ var tempPhotos=[];
 var clientsCache=[];
 var currentPhotoIndex=0,currentPhotoList=[];
 
+// Реквизиты по умолчанию (потом можно вынести в настройки)
+var COMPANY_INFO = {
+    name: 'ФОП Ваше Ім\'я',
+    unp: '1234567890',
+    address: 'м. Київ',
+    phone: '+380...'
+};
+
 var SOURCES={walkin:{code:'X',label:'Проходняк'},site:{code:'D',label:'Сайт'},ad:{code:'S',label:'Оголошення'},repeat:{code:'X1',label:'Повторний'}};
-var TECHNOLOGIES={tv:'ТВ',pc:'ПК',laptop:'Ноутбук',console:'Ігрова приставка'};
+var TECHNOLOGIES={tv:'Телевізор',pc:'ПК',laptop:'Ноутбук',console:'Ігрова приставка'};
 
 function tr(key) {
   var lang = (currentUser && currentUser.lang) || 'uk';
@@ -624,7 +633,7 @@ async function startApp(){
   document.getElementById('dd-email').textContent=currentUser.email||'';
   document.getElementById('btn-export-excel').style.display=currentUser.role==='root'?'':'none';
   
-  applyLang(); // Применяем язык при старте
+  applyLang();
   showApp();
   await loadClients();
   showPage('dashboard');
@@ -822,7 +831,7 @@ document.getElementById('photo-input').addEventListener('change',function(e){
       var img=new Image();
       img.onload=function(){
         var canvas=document.createElement('canvas');var maxW=1200,maxH=1200;var w=img.width,h=img.height;
-        if(w>maxW||h>maxH){var r=Math.min(maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);}
+        if(w>maxW||h>maxH){var r=Math.min(maxW/maxW,maxH/h);w=Math.round(w*r);h=Math.round(h*r);}
         canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);
         tempPhotos.push(canvas.toDataURL('image/jpeg',0.8));renderPhotoGrid();
       };img.src=ev.target.result;
@@ -893,7 +902,7 @@ async function openClient(id){
     (c.source?'<span class="source-badge '+c.source+'">'+esc(sourceLabel(c.source))+'</span>':'')+
     (c.tech_type?'<span class="tech-badge">'+esc(techLabel(c.tech_type))+'</span>':'')+
     '<span class="status '+c.status+'">'+statusLabel(c.status)+'</span></div></div>'+
-    '<div class="detail-actions"><button class="btn" onclick="editClient('+c.id+')">✎ Змінити</button>'+(currentUser.role==='root'?'<button class="btn danger" onclick="deleteClient('+c.id+')">Видалити</button>':'')+'</div></div>'+
+    '<div class="detail-actions"><button class="btn" onclick="editClient('+c.id+')">✎ Змінити</button>'+(currentUser.role==='root'?'<button class="btn danger" onclick="deleteClient('+c.id+')">Видалити</button>':'')+'<button class="btn primary" onclick="generateAct('+c.id+')" style="margin-left:8px">📄 Згенерувати Акт</button></div></div>'+
     '<div class="grid-2"><div class="panel"><div class="panel-head"><div class="panel-title">Дані</div></div><div class="panel-body" style="padding:0"><div class="kv-list">'+
       kv('№ замовлення',c.order_number,true)+kv('Телефон',c.phone,true)+kv('Telegram',c.telegram)+kv('Viber',c.viber,true)+
       kv('Місто',c.city)+kv('Район',c.district)+kv('Адреса',c.address)+
@@ -916,6 +925,113 @@ async function addInteraction(e,cid){
   return false;
 }
 window.addInteraction=addInteraction;
+
+/* АКТ (PDF) */
+function generateAct(id) {
+    var c = clientsCache.filter(function(x){return x.id===id;})[0];
+    if (!c) return;
+
+    var { jsPDF } = window.jspdf;
+    var doc = new jsPDF('p', 'mm', 'a4');
+    
+    // Настройки шрифтов и отступов
+    var marginX = 15;
+    var marginY = 20;
+    var width = 180;
+    
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('АКТ ЗАБОРУ ТЕХНІКИ', 105, marginY, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text('№ ' + c.order_number + ' від ' + new Date(c.created_at).toLocaleDateString('uk-UA'), 105, marginY + 8, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setFont('Helvetica', 'normal');
+    
+    // 1. СТОРОНЫ
+    doc.setFont('Helvetica', 'bold');
+    doc.text('1. СТОРОНИ', marginX, marginY + 20);
+    doc.setFont('Helvetica', 'normal');
+    
+    var text1 = 'Виконавець: ' + COMPANY_INFO.name + '\n' +
+                'ЄДРПОУ/ІПН: ' + COMPANY_INFO.unp + '\n' +
+                'Адреса: ' + COMPANY_INFO.address + '\n\n' +
+                'Замовник: ' + (c.full_name || '—') + '\n' +
+                'Телефон: ' + (c.phone || '—') + '\n' +
+                'Адреса забору: ' + [c.city, c.district, c.address].filter(Boolean).join(', ');
+    doc.text(text1, marginX, marginY + 26);
+
+    // 2. ТЕХНИКА
+    var y2 = marginY + 65;
+    doc.setFont('Helvetica', 'bold');
+    doc.text('2. ТЕХНІКА', marginX, y2);
+    doc.setFont('Helvetica', 'normal');
+    
+    var text2 = 'Найменування: ' + techLabel(c.tech_type) + '\n' +
+                'Виробник / модель: ' + (c.tech_model || 'Не вказано') + '\n' +
+                'Серійний номер: Не вказано\n' +
+                'Комплектація: Не вказано\n' +
+                'Зовнішній стан: Не вказано\n' +
+                'Заявлена несправність: ' + (c.problem || '—');
+    doc.text(text2, marginX, y2 + 6);
+
+    // 3. ДИАГНОСТИКА
+    var y3 = y2 + 40;
+    doc.setFont('Helvetica', 'bold');
+    doc.text('3. ДІАГНОСТИКА', marginX, y3);
+    doc.setFont('Helvetica', 'normal');
+    var text3 = 'Замовник доручає Виконавцю провести діагностику техніки: встановити причину\n' +
+                'несправності, визначити перелік необхідних робіт, запасних частин та вартість\n' +
+                'ремонту. Ремонт виконується лише після попереднього погодження з Замовником.';
+    doc.text(text3, marginX, y3 + 6);
+
+    // 4. УСЛОВИЯ (Перенос на 2-ю страницу, если нужно)
+    var y4 = y3 + 25;
+    if (y4 > 270) { doc.addPage(); y4 = marginY; }
+    doc.setFont('Helvetica', 'bold');
+    doc.text('4. УМОВИ', marginX, y4);
+    doc.setFont('Helvetica', 'normal');
+    
+    var terms = [
+        '1. Акт складено відповідно до Цивільного кодексу України (глава 61, § 2 «Побутовий підряд»).',
+        '2. Техніку прийнято без розбирання. Виконавець не відповідає за приховані дефекти.',
+        '3. Якщо Замовник не забирає техніку протягом 40 днів, він вважається таким, що відмовився від права власності (ст. 347 ЦК України).',
+        '4. Замовник надає згоду на обробку персональних даних з метою виконання цього замовлення.'
+    ];
+    
+    var text4 = '';
+    terms.forEach(function(t) { text4 += t + '\n\n'; });
+    
+    doc.setFontSize(9);
+    doc.text(text4, marginX, y4 + 6, { maxWidth: width });
+
+    // 5. ПОДПИСИ
+    var y5 = y4 + 50;
+    if (y5 > 250) { doc.addPage(); y5 = marginY; }
+    doc.setFontSize(10);
+    doc.setFont('Helvetica', 'bold');
+    doc.text('5. ПІДПИСИ СТОРІН', marginX, y5);
+    doc.setFont('Helvetica', 'normal');
+    
+    doc.text('Виконавець:', marginX, y5 + 10);
+    doc.line(marginX + 25, y5 + 15, marginX + 80, y5 + 15);
+    doc.setFontSize(8);
+    doc.text('(Підпис)', marginX + 40, y5 + 18);
+    
+    doc.setFontSize(10);
+    doc.text('Замовник:', 110, y5 + 10);
+    doc.line(110 + 25, y5 + 15, 110 + 80, y5 + 15);
+    doc.setFontSize(8);
+    doc.text('(Підпис)', 110 + 40, y5 + 18);
+    
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text('Документ сформовано в системі Qerner. ' + new Date().toLocaleString('uk-UA'), marginX, 285);
+    
+    doc.save('Акт_забору_' + (c.order_number || 'без_номера') + '.pdf');
+    toast('Акт успішно згенеровано!');
+}
+window.generateAct = generateAct;
 
 /* АНАЛИТИКА */
 function renderAnalytics(){
@@ -1011,9 +1127,9 @@ async function applyLangBtn(){
     await api('/api/me/lang',{method:'POST',body:{lang:state.pendingLang}});
     currentUser.lang=state.pendingLang;
     state.pendingLang=null;
-    applyLang(); // Перерисовываем интерфейс
+    applyLang();
     renderSettingsContent();
-    renderDashboard(); // Обновляем текущую страницу
+    renderDashboard();
     toast('Мову збережено');
   }catch(e){toast(e.message,true);}
 }
@@ -1070,13 +1186,12 @@ async function deleteUser(id){
 }
 window.deleteUser=deleteUser;
 
-/* EXCEL (КРАСИВЫЙ HTML-ЭКСПОРТ) */
+/* EXCEL */
 function exportExcel(){
   if(!currentUser||currentUser.role!=='root'){toast('Тільки root',true);return;}
   if(!clientsCache.length){toast('Немає даних',true);return;}
 
   var headers = ['№', 'Порядковий', 'ПІБ', 'Джерело', 'Код', 'Телефон', 'Telegram', 'Viber', 'Місто', 'Район', 'Адреса', 'Техніка', 'Модель', 'Проблема', 'Статус', 'Заніс', 'Фото', 'Створено'];
-  
   var rows = clientsCache.slice().sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);}).map(function(c,i){
     return [
       c.order_number||'', i+1, c.full_name||'', sourceLabel(c.source), sourceCode(c.source),
@@ -1087,7 +1202,6 @@ function exportExcel(){
     ];
   });
 
-  // Собираем HTML-таблицу со стилями
   var html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>';
   html += 'table { border-collapse: collapse; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; }';
   html += 'th { background-color: #1a1a1a; color: #ffffff; padding: 10px; border: 1px solid #333; text-align: left; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }';
@@ -1108,7 +1222,6 @@ function exportExcel(){
   rows.forEach(function(row) {
     html += '<tr>';
     row.forEach(function(cell, index) {
-      // Определяем классы для красивого вывода
       var cls = '';
       if (index === 0 || index === 5) cls = 'class="mono"';
       if (index === 14) {
@@ -1118,11 +1231,8 @@ function exportExcel(){
         else if (st === 'лід') cls = 'class="status-lead"';
         else if (st === 'неактивний') cls = 'class="status-inactive"';
       }
-      // Форматируем номер телефона, чтобы Excel не превращал его в дату
       var val = cell;
-      if (index === 5 || index === 7) {
-        val = '="' + cell + '"'; // Явно делаем строкой
-      }
+      if (index === 5 || index === 7) val = '="' + cell + '"';
       html += '<td ' + cls + '>' + val + '</td>';
     });
     html += '</tr>';
@@ -1130,7 +1240,6 @@ function exportExcel(){
 
   html += '</tbody></table></body></html>';
 
-  // Скачиваем как .xls
   var blob = new Blob([html], {type: 'application/vnd.ms-excel'});
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
