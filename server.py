@@ -9,9 +9,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 # --- Настройки ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# На Render используем /tmp для записи
-if os.environ.get("RENDER"):
-    DB_PATH = "/tmp/qerner.db"
+# Настройка пути к базе данных (теперь она на постоянном диске Render)
+if os.path.exists("/var/data"):
+    DB_PATH = "/var/data/qerner.db"
 else:
     DB_PATH = os.path.join(BASE_DIR, "qerner.db")
 
@@ -34,6 +34,7 @@ def now_iso():
 def init_db():
     conn = get_db()
     c = conn.cursor()
+    # Таблицы
     c.execute("""CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL,
         email TEXT, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'admin',
@@ -65,7 +66,7 @@ def init_db():
     c.execute("""CREATE TABLE IF NOT EXISTS order_counters (
         prefix TEXT PRIMARY KEY, counter INTEGER NOT NULL DEFAULT 0
     )""")
-
+    # Создаем Root, если его нет
     if not c.execute("SELECT id FROM users WHERE username='root'").fetchone():
         c.execute("""INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at)
                      VALUES (?,?,?,?,?,?,?,?)""",
@@ -74,8 +75,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# ВАЖНО: Вызываем создание базы данных СРАЗУ при загрузке файла!
-init_db()
+init_db() # Вызываем при старте
 
 # --- ХЕЛПЕРЫ ---
 def json_error(msg, code=400):
@@ -123,12 +123,12 @@ def next_order_number(prefix):
 def prefix_for_source(s):
     return {"walkin": "X", "site": "D", "ad": "S", "repeat": "X1"}.get(s, "X")
 
-# --- СТАТИКА (Отдача админки) ---
+# --- СТАТИКА ---
 @app.route("/")
 def index():
     return send_from_directory(BASE_DIR, "admin.html")
 
-# --- АУТЕНТИФИКАЦИЯ ---
+# --- API ---
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
@@ -172,6 +172,7 @@ def me():
     conn.close()
     return jsonify({"username": u["username"], "email": u["email"], "role": u["role"], "lang": u["lang"]})
 
+# --- ИЗМЕНЕНИЕ ПАРОЛЯ И ЯЗЫКА ---
 @app.route("/api/me/password", methods=["POST"])
 @require_auth
 def change_password():
@@ -318,7 +319,7 @@ def add_interaction(cid):
     log_action("interaction_add", "client", d.get("channel", ""), g.user["username"])
     return jsonify({"ok": True})
 
-# --- ПОЛЬЗОВАТЕЛИ ---
+# --- ПОЛЬЗОВАТЕЛИ (ТОЛЬКО ROOT) ---
 @app.route("/api/users", methods=["GET"])
 @require_auth
 def list_users():
@@ -378,7 +379,6 @@ def list_audit():
 def health():
     return jsonify({"ok": True, "time": now_iso()})
 
-# --- ЗАПУСК (для Render.com) ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
