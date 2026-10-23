@@ -7,12 +7,10 @@ from flask import Flask, request, jsonify, send_from_directory, g
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 
-# --- ЖЕСТКАЯ ПРИВЯЗКА К ДИСКУ RENDER ---
+# --- Настройки ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_DIR = "/var/data" if os.path.exists("/var/data") else BASE_DIR
 DB_PATH = os.path.join(DB_DIR, "qerner.db")
-
-# Принудительно создаем папку, если ее нет
 os.makedirs(DB_DIR, exist_ok=True)
 
 app = Flask(__name__, static_folder=None)
@@ -226,7 +224,8 @@ def create_client():
         conn.execute("INSERT INTO photos (client_id, data, created_at) VALUES (?,?,?)", (cid, photo, now))
     conn.commit()
     conn.close()
-    log_action("client_create", "client", f"{d.get('full_name')} ({order})", g.user["username"])
+    # ТУТ ПИШЕМ НОМЕР ЗАКАЗА В ЖУРНАЛ
+    log_action("client_create", order, f"{d.get('full_name')}", g.user["username"])
     return jsonify({"ok": True, "id": cid, "order_number": order})
 
 @app.route("/api/clients/<int:cid>", methods=["PUT"])
@@ -234,9 +233,11 @@ def create_client():
 def update_client(cid):
     d = request.get_json() or {}
     conn = get_db()
-    if not conn.execute("SELECT id FROM clients WHERE id=?", (cid,)).fetchone():
+    row = conn.execute("SELECT * FROM clients WHERE id=?", (cid,)).fetchone()
+    if not row:
         conn.close()
         return json_error("Не знайдено", 404)
+    
     updates, values = [], []
     for f in CLIENT_FIELDS:
         if f in d:
@@ -253,7 +254,8 @@ def update_client(cid):
             conn.execute("INSERT INTO photos (client_id, data, created_at) VALUES (?,?,?)", (cid, photo, now_iso()))
     conn.commit()
     conn.close()
-    log_action("client_update", "client", d.get("full_name", ""), g.user["username"])
+    # ТУТ ПИШЕМ НОМЕР ЗАКАЗА В ЖУРНАЛ
+    log_action("client_update", row["order_number"], f"{d.get('full_name')}", g.user["username"])
     return jsonify({"ok": True})
 
 @app.route("/api/clients/<int:cid>", methods=["DELETE"])
@@ -261,14 +263,15 @@ def update_client(cid):
 def delete_client(cid):
     if g.user["role"] != "root": return json_error("Тільки root", 403)
     conn = get_db()
-    row = conn.execute("SELECT full_name FROM clients WHERE id=?", (cid,)).fetchone()
+    row = conn.execute("SELECT order_number, full_name FROM clients WHERE id=?", (cid,)).fetchone()
     if not row:
         conn.close()
         return json_error("Не знайдено", 404)
     conn.execute("DELETE FROM clients WHERE id=?", (cid,))
     conn.commit()
     conn.close()
-    log_action("client_delete", "client", row["full_name"], g.user["username"])
+    # ТУТ ПИШЕМ НОМЕР ЗАКАЗА В ЖУРНАЛ
+    log_action("client_delete", row["order_number"], row["full_name"], g.user["username"])
     return jsonify({"ok": True})
 
 @app.route("/api/clients/<int:cid>/interactions", methods=["GET"])
@@ -285,10 +288,11 @@ def add_interaction(cid):
     d = request.get_json() or {}
     if not d.get("subject") and not d.get("body"): return json_error("Заповніть")
     conn = get_db()
+    row = conn.execute("SELECT order_number FROM clients WHERE id=?", (cid,)).fetchone()
     conn.execute("INSERT INTO interactions (client_id,channel,subject,body,user,created_at) VALUES (?,?,?,?,?,?)", (cid, d.get("channel", "note"), d.get("subject", ""), d.get("body", ""), g.user["username"], now_iso()))
     conn.commit()
     conn.close()
-    log_action("interaction_add", "client", d.get("channel", ""), g.user["username"])
+    log_action("interaction_add", row["order_number"] if row else "", d.get("channel", ""), g.user["username"])
     return jsonify({"ok": True})
 
 @app.route("/api/users", methods=["GET"])
@@ -316,7 +320,7 @@ def create_user():
     conn.execute("INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at) VALUES (?,?,?,?,?,?,?,?)", (u, d.get("email", ""), generate_password_hash(p), "admin", "uk", 1, 0, now_iso()))
     conn.commit()
     conn.close()
-    log_action("user_create", "user", u, g.user["username"])
+    log_action("user_create", u, "admin", g.user["username"])
     return jsonify({"ok": True})
 
 @app.route("/api/users/<int:uid>", methods=["DELETE"])
@@ -334,7 +338,7 @@ def delete_user(uid):
     conn.execute("DELETE FROM users WHERE id=?", (uid,))
     conn.commit()
     conn.close()
-    log_action("user_delete", "user", row["username"], g.user["username"])
+    log_action("user_delete", row["username"], "", g.user["username"])
     return jsonify({"ok": True})
 
 @app.route("/api/audit", methods=["GET"])
