@@ -35,8 +35,15 @@ def init_db():
         id SERIAL PRIMARY KEY, username VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255), password_hash VARCHAR(255) NOT NULL, role VARCHAR(50) NOT NULL DEFAULT 'admin',
         lang VARCHAR(10) NOT NULL DEFAULT 'uk', active INTEGER NOT NULL DEFAULT 1,
-        locked INTEGER NOT NULL DEFAULT 0, created_at VARCHAR(255) NOT NULL
+        locked INTEGER NOT NULL DEFAULT 0, created_at VARCHAR(255) NOT NULL,
+        last_seen VARCHAR(255)
     )""")
+    
+    # Добавляем колонку last_seen, если её нет (для старых баз)
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen VARCHAR(255)")
+    except:
+        pass
     
     c.execute("""CREATE TABLE IF NOT EXISTS clients (
         id SERIAL PRIMARY KEY, order_number VARCHAR(255) UNIQUE NOT NULL,
@@ -86,6 +93,7 @@ def current_session():
     if not s: return None
     if s["expires"] < datetime.utcnow():
         SESSIONS.pop(tok, None)
+        update_last_seen(s["username"])
         return None
     return s
 
@@ -97,6 +105,12 @@ def require_auth(f):
         g.user = sess
         return f(*a, **kw)
     return wrapper
+
+def update_last_seen(username):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("UPDATE users SET last_seen=%s WHERE username=%s", (now_iso(), username))
+    conn.close()
 
 def get_real_ip():
     if request.headers.get('X-Forwarded-For'):
@@ -152,7 +166,7 @@ def login():
         "user_id": user["id"], "username": user["username"],
         "role": user["role"], "lang": user["lang"],
         "expires": datetime.utcnow() + timedelta(hours=SESSION_TTL_HOURS),
-        "login_at": datetime.utcnow() # Записываем точное время входа
+        "login_at": datetime.utcnow()
     }
     log_action("login", "user", u, u)
     conn.close()
@@ -163,7 +177,9 @@ def login():
 def logout():
     tok = request.headers.get("X-Session-Token")
     s = SESSIONS.pop(tok, None)
-    if s: log_action("logout", "user", s["username"], s["username"])
+    if s: 
+        log_action("logout", "user", s["username"], s["username"])
+        update_last_seen(s["username"])
     return jsonify({"ok": True})
 
 @app.route("/api/me", methods=["GET"])
@@ -337,7 +353,7 @@ def list_users():
     if g.user["role"] != "root": return json_error("Тільки root", 403)
     conn = get_db()
     c = conn.cursor(row_factory=dict_row)
-    c.execute("SELECT id,username,email,role,lang,active,locked,created_at FROM users ORDER BY id")
+    c.execute("SELECT id,username,email,role,lang,active,locked,created_at,last_seen FROM users ORDER BY id")
     rows = c.fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
@@ -347,7 +363,6 @@ def list_users():
 def users_status():
     if g.user["role"] != "root": return json_error("Тільки root", 403)
     
-    # Собираем уникальных пользователей, которые сейчас в сети
     online_users = {}
     now = datetime.utcnow()
     
@@ -357,10 +372,8 @@ def users_status():
             if u not in online_users or sess["login_at"] > online_users[u]:
                 online_users[u] = sess["login_at"]
                 
-    # Формируем ответ
     out = {}
     for u, dt in online_users.items():
-        # Считаем, сколько минут он в сети
         diff = int((now - dt).total_seconds() / 60)
         out[u] = {
             "online": True,
