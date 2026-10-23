@@ -831,7 +831,7 @@ document.getElementById('photo-input').addEventListener('change',function(e){
       var img=new Image();
       img.onload=function(){
         var canvas=document.createElement('canvas');var maxW=1200,maxH=1200;var w=img.width,h=img.height;
-        if(w>maxW||h>maxH){var r=Math.min(maxW/maxW,maxH/h);w=Math.round(w*r);h=Math.round(h*r);}
+        if(w>maxW||h>maxH){var r=Math.min(maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);}
         canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);
         tempPhotos.push(canvas.toDataURL('image/jpeg',0.8));renderPhotoGrid();
       };img.src=ev.target.result;
@@ -1033,6 +1033,20 @@ function generateAct(id) {
 }
 window.generateAct = generateAct;
 
+/* БЕКАП БАЗЫ */
+function backupDB() {
+  var dataStr = JSON.stringify(clientsCache, null, 2);
+  var blob = new Blob([dataStr], {type: "application/json"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'qerner_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Резервна копія скачана!');
+}
+window.backupDB = backupDB;
+
 /* АНАЛИТИКА */
 function renderAnalytics(){
   var clients=clientsCache;
@@ -1099,6 +1113,7 @@ function renderSettingsContent(){
   else if(tab==='security'){
     el.innerHTML='<h3>'+tr('settings_security')+'</h3>'+
       '<div class="settings-row"><div class="settings-row-label"><div class="name">Змінити пароль</div><div class="hint">Мінімум 8 символів</div></div><div><button class="btn" onclick="openChangePassword()">Змінити</button></div></div>'+
+      '<div class="settings-row"><div class="settings-row-label"><div class="name">Резервна копія</div><div class="hint">Зберегти всі дані на комп\'ютер</div></div><div><button class="btn" onclick="backupDB()">Скачати базу (JSON)</button></div></div>'+
       '<div class="settings-row"><div class="settings-row-label"><div class="name">Тема інтерфейсу</div><div class="hint">Темна або світла</div></div><div><select class="settings-select" onchange="toggleTheme(this.value)"><option value="dark">Темна</option><option value="light">Світла</option></select></div></div>';
   }
   else if(tab==='language'){
