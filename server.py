@@ -7,12 +7,13 @@ from flask import Flask, request, jsonify, send_from_directory, g
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 
-# --- Настройки ---
+# --- ЖЕСТКАЯ ПРИВЯЗКА К ДИСКУ RENDER ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-if os.path.exists("/var/data"):
-    DB_PATH = "/var/data/qerner.db"
-else:
-    DB_PATH = os.path.join(BASE_DIR, "qerner.db")
+DB_DIR = "/var/data" if os.path.exists("/var/data") else BASE_DIR
+DB_PATH = os.path.join(DB_DIR, "qerner.db")
+
+# Принудительно создаем папку, если ее нет
+os.makedirs(DB_DIR, exist_ok=True)
 
 app = Flask(__name__, static_folder=None)
 CORS(app, supports_credentials=True)
