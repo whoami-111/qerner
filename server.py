@@ -2,7 +2,7 @@ import os
 import secrets
 import psycopg
 from psycopg.rows import dict_row
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import Flask, request, jsonify, send_from_directory, g
 from flask_cors import CORS
@@ -22,14 +22,15 @@ def get_db():
     conn = psycopg.connect(DATABASE_URL, autocommit=True)
     return conn
 
+# Переводим время в Киев (UTC+3)
 def now_iso():
-    return datetime.utcnow().isoformat()
+    kyiv_tz = timezone(timedelta(hours=3))
+    return datetime.now(kyiv_tz).isoformat()
 
 def init_db():
     conn = get_db()
     c = conn.cursor()
     
-    # Таблица пользователей
     c.execute("""CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY, username VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255), password_hash VARCHAR(255) NOT NULL, role VARCHAR(50) NOT NULL DEFAULT 'admin',
@@ -37,7 +38,6 @@ def init_db():
         locked INTEGER NOT NULL DEFAULT 0, created_at VARCHAR(255) NOT NULL
     )""")
     
-    # Таблица клиентов
     c.execute("""CREATE TABLE IF NOT EXISTS clients (
         id SERIAL PRIMARY KEY, order_number VARCHAR(255) UNIQUE NOT NULL,
         full_name VARCHAR(255) NOT NULL, phone VARCHAR(50) NOT NULL, telegram VARCHAR(255), viber VARCHAR(50),
@@ -47,30 +47,25 @@ def init_db():
         created_at VARCHAR(255) NOT NULL, updated_at VARCHAR(255) NOT NULL
     )""")
     
-    # Таблица фото
     c.execute("""CREATE TABLE IF NOT EXISTS photos (
         id SERIAL PRIMARY KEY, client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
         data TEXT NOT NULL, created_at VARCHAR(255) NOT NULL
     )""")
     
-    # Таблица взаимодействий
     c.execute("""CREATE TABLE IF NOT EXISTS interactions (
         id SERIAL PRIMARY KEY, client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
         channel VARCHAR(50), subject VARCHAR(255), body TEXT, user_name VARCHAR(100), created_at VARCHAR(255) NOT NULL
     )""")
     
-    # Таблица аудита
     c.execute("""CREATE TABLE IF NOT EXISTS audit (
         id SERIAL PRIMARY KEY, action VARCHAR(50) NOT NULL, entity VARCHAR(255),
         details TEXT, user_name VARCHAR(100), ip VARCHAR(50), created_at VARCHAR(255) NOT NULL
     )""")
     
-    # Счетчики заказов
     c.execute("""CREATE TABLE IF NOT EXISTS order_counters (
         prefix VARCHAR(10) PRIMARY KEY, counter INTEGER NOT NULL DEFAULT 0
     )""")
     
-    # Создаем root, если нет
     c.execute("SELECT id FROM users WHERE username='root'")
     if not c.fetchone():
         c.execute("""INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at)
@@ -103,11 +98,17 @@ def require_auth(f):
         return f(*a, **kw)
     return wrapper
 
+def get_real_ip():
+    # Достаем реальный IP из заголовков Render
+    if request.headers.get('X-Forwarded-For'):
+        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
+    return request.remote_addr or "unknown"
+
 def log_action(action, entity="", details="", user="system"):
     conn = get_db()
     c = conn.cursor()
     c.execute("INSERT INTO audit (action,entity,details,user_name,ip,created_at) VALUES (%s,%s,%s,%s,%s,%s)",
-                 (action, entity, details, user, request.remote_addr or "", now_iso()))
+                 (action, entity, details, user, get_real_ip(), now_iso()))
     conn.close()
 
 def next_order_number(prefix):
@@ -242,7 +243,6 @@ def create_client():
         (order, d.get("full_name", ""), d.get("phone", ""), d.get("telegram", ""), d.get("viber", ""), d.get("preferred_messenger", "phone"), d.get("city", ""), d.get("district", ""), d.get("address", ""), d.get("tech_type", ""), d.get("tech_model", ""), d.get("problem", ""), d.get("company", ""), d.get("edrpou", ""), d.get("notes", ""), d.get("source", ""), d.get("status", "active"), g.user["username"], now, now))
     cid = c.fetchone()["id"]
     
-    # Безопасное сохранение фото (если фото не влезет, клиент всё равно сохранится)
     for photo in d.get("photos", []):
         try:
             c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now))
