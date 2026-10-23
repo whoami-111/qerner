@@ -393,8 +393,9 @@ def list_audit():
 @app.route("/api/audit/clear", methods=["POST"])
 @require_auth
 def clear_audit():
-    if g.user["username"] != "root":
-        return json_error("Тільки головний адміністратор (root) може очищати журнал", 403)
+    # Проверяем не по имени, а по системной роли
+    if g.user["role"] != "root":
+        return json_error("Недостатньо прав для очищення журналу", 403)
     
     conn = get_db()
     c = conn.cursor()
