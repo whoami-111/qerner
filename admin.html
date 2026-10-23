@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="format-detection" content="telephone=no">
 <title>Qerner Admin</title>
-<!-- Подключаем jsPDF -->
+<!-- Подключаем jsPDF для генерации документов -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -430,6 +430,7 @@ tbody tr:last-child td{border-bottom:none}
       <div class="page" id="page-audit">
         <div class="page-head"><div><div class="page-title" data-i18n="menu_audit">Журнал</div></div></div>
         <div class="table-wrap"><div id="audit-table"></div></div>
+        <div class="cards-list" id="audit-mobile"></div>
       </div>
 
       <div class="page" id="page-settings">
@@ -1094,13 +1095,122 @@ function renderAnalytics(){
 
 /* ЖУРНАЛ */
 async function renderAudit(){
-  var logs=[];try{logs=await api('/api/audit');}catch(e){}
-  if(!logs.length){document.getElementById('audit-table').innerHTML=emptyState('▦','Журнал порожній','');return;}
-  var labels={login:'Вхід',login_fail:'Невдалий',logout:'Вихід',client_create:'Створення',client_update:'Оновлення',client_delete:'Видалення',interaction_add:'Взаємодія',password_change:'Пароль',user_create:'Юзер+',user_update:'Юзер~',user_delete:'Юзер-',lang_change:'Мова'};
-  var html='<table><thead><tr><th>'+tr('audit_time')+'</th><th>'+tr('audit_user')+'</th><th>'+tr('audit_action')+'</th><th>'+tr('audit_obj')+'</th></tr></thead><tbody>';
-  logs.slice(0,300).forEach(function(l){html+='<tr><td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3);white-space:nowrap">'+fmtDate(l.created_at)+'</td><td style="font-family:var(--mono);font-size:11.5px">'+esc(l.user)+'</td><td><span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border-radius:3px;text-transform:uppercase">'+esc(labels[l.action]||l.action)+'</span></td><td style="font-size:12.5px;font-weight:600;color:var(--info)">'+esc(l.entity||'—')+'</td></tr>';});
-  html+='</tbody></table>';document.getElementById('audit-table').innerHTML=html;
+  var logs=[];
+  try{ logs = await api('/api/audit'); }catch(e){}
+  
+  if(!logs.length){
+    document.getElementById('audit-table').innerHTML = emptyState('▦', tr('msg_error') || 'Журнал порожній', '');
+    return;
+  }
+
+  var labels={
+    login:'Вхід', login_fail:'Невдалий вхід', logout:'Вихід', client_create:'Створення', 
+    client_update:'Оновлення', client_delete:'Видалення', interaction_add:'Взаємодія', 
+    password_change:'Пароль', user_create:'Юзер+', user_update:'Юзер~', user_delete:'Юзер-', 
+    lang_change:'Мова', srm_sync:'SRM'
+  };
+
+  // ДЕСКТОПНАЯ ВЕРСИЯ
+  var html = '<table><thead><tr>'+
+    '<th>'+tr('audit_time')+'</th>'+
+    '<th>'+tr('audit_user')+'</th>'+
+    '<th>IP</th>'+
+    '<th>'+tr('audit_action')+'</th>'+
+    '<th>'+tr('audit_obj')+'</th>'+
+    '</tr></thead><tbody>';
+
+  // МОБИЛЬНАЯ ВЕРСИЯ
+  var mobHtml = '';
+
+  logs.slice(0, 300).forEach(function(l){
+    var userTxt = l.user_name || 'system';
+    var ipTxt = l.ip || '—';
+    var objTxt = l.entity || '—';
+    var actionTxt = labels[l.action] || l.action;
+    
+    // Если объект похож на номер заказа (например X-000001), делаем ссылку
+    var isOrder = /^[A-Z0-9]+-\d{6}$/.test(objTxt);
+    var objHtml = isOrder 
+      ? '<a href="#" onclick="showQuickClient(\''+objTxt+'\');return false" style="color:var(--info);text-decoration:underline;font-weight:600;font-family:var(--mono)">'+objTxt+'</a>'
+      : '<span style="font-family:var(--mono);color:var(--text-2)">'+objTxt+'</span>';
+
+    // Строка для десктопа
+    html += '<tr>'+
+      '<td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3);white-space:nowrap">'+fmtDate(l.created_at)+'</td>'+
+      '<td style="font-family:var(--mono);font-size:11.5px;font-weight:600">'+esc(userTxt)+'</td>'+
+      '<td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3)">'+esc(ipTxt)+'</td>'+
+      '<td><span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border-radius:3px;text-transform:uppercase">'+esc(actionTxt)+'</span></td>'+
+      '<td style="font-size:12.5px">'+objHtml+'</td>'+
+    '</tr>';
+
+    // Карточка для мобилки
+    mobHtml += '<div class="mob-card" style="margin-bottom:8px;padding:12px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+        '<span style="font-family:var(--mono);font-size:11px;color:var(--text-3)">'+fmtDate(l.created_at)+'</span>'+
+        '<span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border-radius:3px;text-transform:uppercase">'+esc(actionTxt)+'</span>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">'+
+        '<span style="color:var(--text-2)">'+tr('audit_user')+':</span>'+
+        '<span style="font-family:var(--mono);font-weight:600">'+esc(userTxt)+'</span>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">'+
+        '<span style="color:var(--text-2)">IP:</span>'+
+        '<span style="font-family:var(--mono);color:var(--text-3)">'+esc(ipTxt)+'</span>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;align-items:center">'+
+        '<span style="color:var(--text-2)">'+tr('audit_obj')+':</span>'+
+        '<span>'+objHtml+'</span>'+
+      '</div>'+
+    '</div>';
+  });
+  
+  html += '</tbody></table>';
+  
+  document.getElementById('audit-table').innerHTML = html;
+  document.getElementById('audit-mobile').innerHTML = mobHtml;
 }
+
+// Функция для быстрой карточки клиента прямо из журнала
+async function showQuickClient(orderNumber) {
+  // Ищем клиента в кэше по номеру заказа
+  var c = clientsCache.find(function(x){ return x.order_number === orderNumber; });
+  
+  document.getElementById('modal-title').textContent = 'Швидкий перегляд';
+  
+  if (!c) {
+    // Если клиента нет в кэше (например, удален), пробуем найти по API
+    document.getElementById('modal-content').innerHTML = '<div class="modal-body"><div class="empty"><div class="empty-title">Клієнта не знайдено в базі</div><div class="empty-sub">Можливо, його було видалено</div></div></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Закрити</button></div>';
+    document.getElementById('modal').classList.add('open');
+    return;
+  }
+
+  // Формируем красивую карточку
+  var html = '<div class="modal-body">' +
+    '<div class="detail-head" style="margin-bottom:12px;padding:14px">' +
+      '<div class="detail-avatar">'+esc(initials(c.full_name))+'</div>' +
+      '<div class="detail-meta">' +
+        '<div class="detail-name">'+esc(c.full_name)+'</div>' +
+        '<div class="detail-sub">' +
+          '<span class="order-num">'+esc(c.order_number)+'</span>' +
+          '<span class="status '+c.status+'">'+statusLabel(c.status)+'</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="kv-list" style="margin-bottom:16px">' +
+      kv(tr('form_phone'), c.phone, true) +
+      kv(tr('form_tech'), c.tech_type ? techLabel(c.tech_type) : '—') +
+      kv(tr('form_problem'), c.problem) +
+    '</div>' +
+  '</div>' +
+  '<div class="modal-foot" style="justify-content:space-between">' +
+    '<button class="btn" onclick="closeModal()">Закрити</button>' +
+    '<button class="btn primary" onclick="closeModal(); openClient('+c.id+')">Перейти до заказу →</button>' +
+  '</div>';
+
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+window.showQuickClient = showQuickClient;
 
 /* НАСТРОЙКИ */
 var SETTINGS_TABS=[
