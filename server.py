@@ -9,7 +9,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 # --- Настройки ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Настройка пути к базе данных (теперь она на постоянном диске Render)
 if os.path.exists("/var/data"):
     DB_PATH = "/var/data/qerner.db"
 else:
@@ -21,7 +20,6 @@ CORS(app, supports_credentials=True)
 SESSIONS = {}
 SESSION_TTL_HOURS = 24 * 7
 
-# --- БАЗА ДАННЫХ ---
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -34,7 +32,6 @@ def now_iso():
 def init_db():
     conn = get_db()
     c = conn.cursor()
-    # Таблицы
     c.execute("""CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL,
         email TEXT, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'admin',
@@ -66,7 +63,6 @@ def init_db():
     c.execute("""CREATE TABLE IF NOT EXISTS order_counters (
         prefix TEXT PRIMARY KEY, counter INTEGER NOT NULL DEFAULT 0
     )""")
-    # Создаем Root, если его нет
     if not c.execute("SELECT id FROM users WHERE username='root'").fetchone():
         c.execute("""INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at)
                      VALUES (?,?,?,?,?,?,?,?)""",
@@ -75,9 +71,8 @@ def init_db():
     conn.commit()
     conn.close()
 
-init_db() # Вызываем при старте
+init_db()
 
-# --- ХЕЛПЕРЫ ---
 def json_error(msg, code=400):
     return jsonify({"ok": False, "error": msg}), code
 
@@ -123,26 +118,22 @@ def next_order_number(prefix):
 def prefix_for_source(s):
     return {"walkin": "X", "site": "D", "ad": "S", "repeat": "X1"}.get(s, "X")
 
-# --- СТАТИКА ---
 @app.route("/")
 def index():
     return send_from_directory(BASE_DIR, "admin.html")
 
-# --- API ---
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
     u = (data.get("username") or "").strip()
     p = data.get("password") or ""
     if not u or not p: return json_error("Заповніть поля")
-
     conn = get_db()
     user = conn.execute("SELECT * FROM users WHERE username=?", (u,)).fetchone()
     if not user or not user["active"] or not check_password_hash(user["password_hash"], p):
         log_action("login_fail", "user", u, u)
         conn.close()
         return json_error("Невірний логін або пароль", 401)
-
     tok = secrets.token_hex(32)
     SESSIONS[tok] = {
         "user_id": user["id"], "username": user["username"],
@@ -151,10 +142,7 @@ def login():
     }
     log_action("login", "user", u, u)
     conn.close()
-    return jsonify({
-        "ok": True, "token": tok,
-        "user": {"username": user["username"], "email": user["email"], "role": user["role"], "lang": user["lang"]}
-    })
+    return jsonify({"ok": True, "token": tok, "user": {"username": user["username"], "email": user["email"], "role": user["role"], "lang": user["lang"]}})
 
 @app.route("/api/logout", methods=["POST"])
 @require_auth
@@ -172,7 +160,6 @@ def me():
     conn.close()
     return jsonify({"username": u["username"], "email": u["email"], "role": u["role"], "lang": u["lang"]})
 
-# --- ИЗМЕНЕНИЕ ПАРОЛЯ И ЯЗЫКА ---
 @app.route("/api/me/password", methods=["POST"])
 @require_auth
 def change_password():
@@ -203,10 +190,7 @@ def set_lang():
     log_action("lang_change", "user", lang, g.user["username"])
     return jsonify({"ok": True, "lang": lang})
 
-# --- КЛИЕНТЫ ---
-CLIENT_FIELDS = ["full_name", "phone", "telegram", "viber", "preferred_messenger",
-                 "city", "district", "address", "tech_type", "tech_model", "problem",
-                 "company", "edrpou", "notes", "source", "status"]
+CLIENT_FIELDS = ["full_name", "phone", "telegram", "viber", "preferred_messenger", "city", "district", "address", "tech_type", "tech_model", "problem", "company", "edrpou", "notes", "source", "status"]
 
 @app.route("/api/clients", methods=["GET"])
 @require_auth
@@ -229,25 +213,16 @@ def create_client():
     if not d.get("full_name") or not d.get("phone"): return json_error("ПІБ та телефон обов'язкові")
     if not d.get("source"): return json_error("Оберіть джерело")
     if not d.get("tech_type"): return json_error("Оберіть техніку")
-
     order = next_order_number(prefix_for_source(d["source"]))
     now = now_iso()
     conn = get_db()
     cur = conn.execute("""INSERT INTO clients
-        (order_number, full_name, phone, telegram, viber, preferred_messenger,
-         city, district, address, tech_type, tech_model, problem, company, edrpou,
-         notes, source, status, created_by, created_at, updated_at)
+        (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (order, d.get("full_name", ""), d.get("phone", ""), d.get("telegram", ""), d.get("viber", ""),
-         d.get("preferred_messenger", "phone"), d.get("city", ""), d.get("district", ""), d.get("address", ""),
-         d.get("tech_type", ""), d.get("tech_model", ""), d.get("problem", ""), d.get("company", ""),
-         d.get("edrpou", ""), d.get("notes", ""), d.get("source", ""), d.get("status", "active"),
-         g.user["username"], now, now))
+        (order, d.get("full_name", ""), d.get("phone", ""), d.get("telegram", ""), d.get("viber", ""), d.get("preferred_messenger", "phone"), d.get("city", ""), d.get("district", ""), d.get("address", ""), d.get("tech_type", ""), d.get("tech_model", ""), d.get("problem", ""), d.get("company", ""), d.get("edrpou", ""), d.get("notes", ""), d.get("source", ""), d.get("status", "active"), g.user["username"], now, now))
     cid = cur.lastrowid
-
     for photo in d.get("photos", []):
         conn.execute("INSERT INTO photos (client_id, data, created_at) VALUES (?,?,?)", (cid, photo, now))
-
     conn.commit()
     conn.close()
     log_action("client_create", "client", f"{d.get('full_name')} ({order})", g.user["username"])
@@ -261,7 +236,6 @@ def update_client(cid):
     if not conn.execute("SELECT id FROM clients WHERE id=?", (cid,)).fetchone():
         conn.close()
         return json_error("Не знайдено", 404)
-
     updates, values = [], []
     for f in CLIENT_FIELDS:
         if f in d:
@@ -272,12 +246,10 @@ def update_client(cid):
         values.append(now_iso())
         values.append(cid)
         conn.execute(f"UPDATE clients SET {', '.join(updates)} WHERE id=?", values)
-
     if "photos" in d:
         conn.execute("DELETE FROM photos WHERE client_id=?", (cid,))
         for photo in d["photos"]:
             conn.execute("INSERT INTO photos (client_id, data, created_at) VALUES (?,?,?)", (cid, photo, now_iso()))
-
     conn.commit()
     conn.close()
     log_action("client_update", "client", d.get("full_name", ""), g.user["username"])
@@ -312,14 +284,12 @@ def add_interaction(cid):
     d = request.get_json() or {}
     if not d.get("subject") and not d.get("body"): return json_error("Заповніть")
     conn = get_db()
-    conn.execute("INSERT INTO interactions (client_id,channel,subject,body,user,created_at) VALUES (?,?,?,?,?,?)",
-                 (cid, d.get("channel", "note"), d.get("subject", ""), d.get("body", ""), g.user["username"], now_iso()))
+    conn.execute("INSERT INTO interactions (client_id,channel,subject,body,user,created_at) VALUES (?,?,?,?,?,?)", (cid, d.get("channel", "note"), d.get("subject", ""), d.get("body", ""), g.user["username"], now_iso()))
     conn.commit()
     conn.close()
     log_action("interaction_add", "client", d.get("channel", ""), g.user["username"])
     return jsonify({"ok": True})
 
-# --- ПОЛЬЗОВАТЕЛИ (ТОЛЬКО ROOT) ---
 @app.route("/api/users", methods=["GET"])
 @require_auth
 def list_users():
@@ -342,8 +312,7 @@ def create_user():
     if conn.execute("SELECT id FROM users WHERE username=?", (u,)).fetchone():
         conn.close()
         return json_error("Логін існує")
-    conn.execute("INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at) VALUES (?,?,?,?,?,?,?,?)",
-                 (u, d.get("email", ""), generate_password_hash(p), "admin", "uk", 1, 0, now_iso()))
+    conn.execute("INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at) VALUES (?,?,?,?,?,?,?,?)", (u, d.get("email", ""), generate_password_hash(p), "admin", "uk", 1, 0, now_iso()))
     conn.commit()
     conn.close()
     log_action("user_create", "user", u, g.user["username"])
