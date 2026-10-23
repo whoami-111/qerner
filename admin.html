@@ -1128,7 +1128,15 @@ async function renderAudit(){
     var objTxt = l.entity || '—';
     var actionTxt = labels[l.action] || l.action;
     
-    // Если объект похож на номер заказа (например X-000001), делаем ссылку
+    // Красивая обводка для пользователей
+    var userColor = 'var(--text)';
+    var userBorder = 'transparent';
+    if (userTxt === 'root') { userColor = '#fbbf24'; userBorder = 'rgba(251,191,36,.4)'; }
+    else if (userTxt === 'admin') { userColor = 'var(--vip)'; userBorder = 'rgba(163,113,247,.4)'; }
+    else if (userTxt !== 'system') { userColor = 'var(--info)'; userBorder = 'rgba(88,166,255,.4)'; }
+
+    var userHtml = '<span style="font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:4px;border:1px solid '+userBorder+';color:'+userColor+'">'+esc(userTxt)+'</span>';
+
     var isOrder = /^[A-Z0-9]+-\d{6}$/.test(objTxt);
     var objHtml = isOrder 
       ? '<a href="#" onclick="showQuickClient(\''+objTxt+'\');return false" style="color:var(--info);text-decoration:underline;font-weight:600;font-family:var(--mono)">'+objTxt+'</a>'
@@ -1137,23 +1145,23 @@ async function renderAudit(){
     // Строка для десктопа
     html += '<tr>'+
       '<td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3);white-space:nowrap">'+fmtDate(l.created_at)+'</td>'+
-      '<td style="font-family:var(--mono);font-size:11.5px;font-weight:600">'+esc(userTxt)+'</td>'+
+      '<td>'+userHtml+'</td>'+
       '<td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3)">'+esc(ipTxt)+'</td>'+
-      '<td><span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border-radius:3px;text-transform:uppercase">'+esc(actionTxt)+'</span></td>'+
+      '<td><span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;text-transform:uppercase">'+esc(actionTxt)+'</span></td>'+
       '<td style="font-size:12.5px">'+objHtml+'</td>'+
     '</tr>';
 
     // Карточка для мобилки
     mobHtml += '<div class="mob-card" style="margin-bottom:8px;padding:12px">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
         '<span style="font-family:var(--mono);font-size:11px;color:var(--text-3)">'+fmtDate(l.created_at)+'</span>'+
-        '<span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border-radius:3px;text-transform:uppercase">'+esc(actionTxt)+'</span>'+
+        '<span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;text-transform:uppercase">'+esc(actionTxt)+'</span>'+
       '</div>'+
-      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px">'+
         '<span style="color:var(--text-2)">'+tr('audit_user')+':</span>'+
-        '<span style="font-family:var(--mono);font-weight:600">'+esc(userTxt)+'</span>'+
+        userHtml+
       '</div>'+
-      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">'+
         '<span style="color:var(--text-2)">IP:</span>'+
         '<span style="font-family:var(--mono);color:var(--text-3)">'+esc(ipTxt)+'</span>'+
       '</div>'+
@@ -1172,19 +1180,16 @@ async function renderAudit(){
 
 // Функция для быстрой карточки клиента прямо из журнала
 async function showQuickClient(orderNumber) {
-  // Ищем клиента в кэше по номеру заказа
   var c = clientsCache.find(function(x){ return x.order_number === orderNumber; });
   
   document.getElementById('modal-title').textContent = 'Швидкий перегляд';
   
   if (!c) {
-    // Если клиента нет в кэше (например, удален), пробуем найти по API
     document.getElementById('modal-content').innerHTML = '<div class="modal-body"><div class="empty"><div class="empty-title">Клієнта не знайдено в базі</div><div class="empty-sub">Можливо, його було видалено</div></div></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Закрити</button></div>';
     document.getElementById('modal').classList.add('open');
     return;
   }
 
-  // Формируем красивую карточку
   var html = '<div class="modal-body">' +
     '<div class="detail-head" style="margin-bottom:12px;padding:14px">' +
       '<div class="detail-avatar">'+esc(initials(c.full_name))+'</div>' +
