@@ -22,7 +22,6 @@ def get_db():
     conn = psycopg.connect(DATABASE_URL, autocommit=True)
     return conn
 
-# Переводим время в Киев (UTC+3)
 def now_iso():
     kyiv_tz = timezone(timedelta(hours=3))
     return datetime.now(kyiv_tz).isoformat()
@@ -30,7 +29,6 @@ def now_iso():
 def init_db():
     conn = get_db()
     c = conn.cursor()
-    
     c.execute("""CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY, username VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255), password_hash VARCHAR(255) NOT NULL, role VARCHAR(50) NOT NULL DEFAULT 'admin',
@@ -38,12 +36,8 @@ def init_db():
         locked INTEGER NOT NULL DEFAULT 0, created_at VARCHAR(255) NOT NULL,
         last_seen VARCHAR(255)
     )""")
-    
-    # Добавляем колонку last_seen, если её нет (для старых баз)
-    try:
-        c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen VARCHAR(255)")
-    except:
-        pass
+    # Добавляем колонку, если её нет (для старых баз)
+    c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen VARCHAR(255)")
     
     c.execute("""CREATE TABLE IF NOT EXISTS clients (
         id SERIAL PRIMARY KEY, order_number VARCHAR(255) UNIQUE NOT NULL,
@@ -53,22 +47,18 @@ def init_db():
         source VARCHAR(50) NOT NULL, status VARCHAR(50) DEFAULT 'active', created_by VARCHAR(100),
         created_at VARCHAR(255) NOT NULL, updated_at VARCHAR(255) NOT NULL
     )""")
-    
     c.execute("""CREATE TABLE IF NOT EXISTS photos (
         id SERIAL PRIMARY KEY, client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
         data TEXT NOT NULL, created_at VARCHAR(255) NOT NULL
     )""")
-    
     c.execute("""CREATE TABLE IF NOT EXISTS interactions (
         id SERIAL PRIMARY KEY, client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
         channel VARCHAR(50), subject VARCHAR(255), body TEXT, user_name VARCHAR(100), created_at VARCHAR(255) NOT NULL
     )""")
-    
     c.execute("""CREATE TABLE IF NOT EXISTS audit (
         id SERIAL PRIMARY KEY, action VARCHAR(50) NOT NULL, entity VARCHAR(255),
         details TEXT, user_name VARCHAR(100), ip VARCHAR(50), created_at VARCHAR(255) NOT NULL
     )""")
-    
     c.execute("""CREATE TABLE IF NOT EXISTS order_counters (
         prefix VARCHAR(10) PRIMARY KEY, counter INTEGER NOT NULL DEFAULT 0
     )""")
@@ -166,8 +156,11 @@ def login():
         "user_id": user["id"], "username": user["username"],
         "role": user["role"], "lang": user["lang"],
         "expires": datetime.utcnow() + timedelta(hours=SESSION_TTL_HOURS),
-        "login_at": datetime.utcnow()
+        "login_at": datetime.utcnow(),
+        "last_ping": datetime.utcnow() # Для отслеживания активности
     }
+    # Сразу обновляем время при входе
+    c.execute("UPDATE users SET last_seen=%s WHERE id=%s", (now_iso(), user["id"]))
     log_action("login", "user", u, u)
     conn.close()
     return jsonify({"ok": True, "token": tok, "user": {"username": user["username"], "email": user["email"], "role": user["role"], "lang": user["lang"]}})
@@ -180,6 +173,16 @@ def logout():
     if s: 
         log_action("logout", "user", s["username"], s["username"])
         update_last_seen(s["username"])
+    return jsonify({"ok": True})
+
+@app.route("/api/ping", methods=["POST"])
+@require_auth
+def ping():
+    """Heartbeat — браузер говорит серверу 'я ещё тут'"""
+    tok = request.headers.get("X-Session-Token")
+    if tok in SESSIONS:
+        SESSIONS[tok]["last_ping"] = datetime.utcnow()
+        update_last_seen(g.user["username"])
     return jsonify({"ok": True})
 
 @app.route("/api/me", methods=["GET"])
@@ -363,11 +366,12 @@ def list_users():
 def users_status():
     if g.user["role"] != "root": return json_error("Тільки root", 403)
     
+    # Считаем пользователей, у которых последний ping был меньше 60 секунд назад
     online_users = {}
     now = datetime.utcnow()
     
     for tok, sess in SESSIONS.items():
-        if sess["expires"] > now:
+        if sess["expires"] > now and (now - sess["last_ping"]).total_seconds() < 60:
             u = sess["username"]
             if u not in online_users or sess["login_at"] > online_users[u]:
                 online_users[u] = sess["login_at"]
