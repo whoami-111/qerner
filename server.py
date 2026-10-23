@@ -1,7 +1,7 @@
 import os
 import secrets
-import psycopg2
-import psycopg2.extras
+import psycopg
+from psycopg.rows import dict_row
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, request, jsonify, send_from_directory, g
@@ -19,8 +19,7 @@ SESSIONS = {}
 SESSION_TTL_HOURS = 24 * 7
 
 def get_db():
-    conn = psycopg2.connect(DATABASE_URL)
-    conn.autocommit = True
+    conn = psycopg.connect(DATABASE_URL, autocommit=True)
     return conn
 
 def now_iso():
@@ -29,7 +28,6 @@ def now_iso():
 def init_db():
     conn = get_db()
     c = conn.cursor()
-    # Таблицы для PostgreSQL
     c.execute("""CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY, username VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255), password_hash VARCHAR(255) NOT NULL, role VARCHAR(50) NOT NULL DEFAULT 'admin',
@@ -127,7 +125,7 @@ def login():
     p = data.get("password") or ""
     if not u or not p: return json_error("Заповніть поля")
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT * FROM users WHERE username=%s", (u,))
     user = c.fetchone()
     
@@ -158,7 +156,7 @@ def logout():
 @require_auth
 def me():
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT * FROM users WHERE id=%s", (g.user["user_id"],))
     u = c.fetchone()
     conn.close()
@@ -170,7 +168,7 @@ def change_password():
     d = request.get_json() or {}
     if len(d.get("new", "")) < 8: return json_error("Мін. 8 символів")
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT * FROM users WHERE id=%s", (g.user["user_id"],))
     u = c.fetchone()
     if not check_password_hash(u["password_hash"], d.get("current", "")):
@@ -201,13 +199,13 @@ CLIENT_FIELDS = ["full_name", "phone", "telegram", "viber", "preferred_messenger
 @require_auth
 def list_clients():
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT * FROM clients ORDER BY updated_at DESC")
     rows = c.fetchall()
     out = []
     for r in rows:
         c.execute("SELECT data FROM photos WHERE client_id=%s ORDER BY id", (r["id"],))
-        photos = [p[0] for p in c.fetchall()]
+        photos = [p["data"] for p in c.fetchall()]
         d = dict(r)
         d["photos"] = photos
         out.append(d)
@@ -229,7 +227,7 @@ def create_client():
         (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
         (order, d.get("full_name", ""), d.get("phone", ""), d.get("telegram", ""), d.get("viber", ""), d.get("preferred_messenger", "phone"), d.get("city", ""), d.get("district", ""), d.get("address", ""), d.get("tech_type", ""), d.get("tech_model", ""), d.get("problem", ""), d.get("company", ""), d.get("edrpou", ""), d.get("notes", ""), d.get("source", ""), d.get("status", "active"), g.user["username"], now, now))
-    cid = c.fetchone()[0]
+    cid = c.fetchone()["id"]
     for photo in d.get("photos", []):
         c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now))
     conn.close()
@@ -241,7 +239,7 @@ def create_client():
 def update_client(cid):
     d = request.get_json() or {}
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT * FROM clients WHERE id=%s", (cid,))
     row = c.fetchone()
     if not row:
@@ -273,7 +271,7 @@ def update_client(cid):
 def delete_client(cid):
     if g.user["role"] != "root": return json_error("Тільки root", 403)
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT order_number, full_name FROM clients WHERE id=%s", (cid,))
     row = c.fetchone()
     if not row:
@@ -288,7 +286,7 @@ def delete_client(cid):
 @require_auth
 def list_interactions(cid):
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT * FROM interactions WHERE client_id=%s ORDER BY created_at DESC", (cid,))
     rows = c.fetchall()
     conn.close()
@@ -300,7 +298,7 @@ def add_interaction(cid):
     d = request.get_json() or {}
     if not d.get("subject") and not d.get("body"): return json_error("Заповніть")
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT order_number FROM clients WHERE id=%s", (cid,))
     row = c.fetchone()
     c.execute("INSERT INTO interactions (client_id,channel,subject,body,user,created_at) VALUES (%s,%s,%s,%s,%s,%s)", (cid, d.get("channel", "note"), d.get("subject", ""), d.get("body", ""), g.user["username"], now_iso()))
@@ -313,7 +311,7 @@ def add_interaction(cid):
 def list_users():
     if g.user["role"] != "root": return json_error("Тільки root", 403)
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT id,username,email,role,lang,active,locked,created_at FROM users ORDER BY id")
     rows = c.fetchall()
     conn.close()
@@ -344,7 +342,7 @@ def create_user():
 def delete_user(uid):
     if g.user["role"] != "root": return json_error("Тільки root", 403)
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT username, role FROM users WHERE id=%s", (uid,))
     row = c.fetchone()
     if not row:
@@ -362,7 +360,7 @@ def delete_user(uid):
 @require_auth
 def list_audit():
     conn = get_db()
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = conn.cursor(row_factory=dict_row)
     c.execute("SELECT * FROM audit ORDER BY created_at DESC LIMIT 500")
     rows = c.fetchall()
     conn.close()
