@@ -428,7 +428,13 @@ tbody tr:last-child td{border-bottom:none}
       </div>
 
       <div class="page" id="page-audit">
-        <div class="page-head"><div><div class="page-title" data-i18n="menu_audit">Журнал</div></div></div>
+        <div class="page-head">
+          <div><div class="page-title" data-i18n="menu_audit">Журнал</div></div>
+          <div class="page-actions">
+            <button class="btn" onclick="downloadAudit()">↓ Скачати (Excel)</button>
+            <button class="btn danger" onclick="openClearAudit()">Очистити журнал</button>
+          </div>
+        </div>
         <div class="table-wrap"><div id="audit-table"></div></div>
         <div class="cards-list" id="audit-mobile"></div>
       </div>
@@ -1107,7 +1113,7 @@ async function renderAudit(){
     login:'Вхід', login_fail:'Невдалий вхід', logout:'Вихід', client_create:'Створення', 
     client_update:'Оновлення', client_delete:'Видалення', interaction_add:'Взаємодія', 
     password_change:'Пароль', user_create:'Юзер+', user_update:'Юзер~', user_delete:'Юзер-', 
-    lang_change:'Мова', srm_sync:'SRM'
+    lang_change:'Мова', srm_sync:'SRM', audit_clear:'Очищення'
   };
 
   // ДЕСКТОПНАЯ ВЕРСИЯ
@@ -1216,6 +1222,88 @@ async function showQuickClient(orderNumber) {
   document.getElementById('modal').classList.add('open');
 }
 window.showQuickClient = showQuickClient;
+
+/* ОЧИСТКА ЖУРНАЛА */
+function openClearAudit() {
+  document.getElementById('modal-title').textContent = 'Очищення журналу';
+  var html = '<form onsubmit="confirmClearAudit(event)"><div class="modal-body">'+
+    '<div style="color:var(--danger);font-size:13px;margin-bottom:16px;background:rgba(248,81,73,.1);padding:10px;border-radius:6px;border:1px solid rgba(248,81,73,.3)">'+
+    'Увага! Ця дія видалить ВСІ записи журналу назавжди. Рекомендуємо спочатку скачати копію.'+
+    '</div>'+
+    '<div style="margin-bottom:16px"><button type="button" class="btn" onclick="downloadAudit()" style="width:100%;justify-content:center">↓ Скачати журнал перед очищенням (Excel)</button></div>'+
+    '<div class="form-row full"><div class="form-group"><label>Логін (тільки root)</label><input class="form-input mono" id="clear-username" required placeholder="root"></div></div>'+
+    '<div class="form-row full"><div class="form-group"><label>Пароль</label><input class="form-input" type="password" id="clear-password" required></div></div>'+
+    '</div><div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">Скасувати</button><button type="submit" class="btn danger">Очистити назавжди</button></div></form>';
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+window.openClearAudit = openClearAudit;
+
+async function confirmClearAudit(e) {
+  e.preventDefault();
+  var u = document.getElementById('clear-username').value.trim();
+  var p = document.getElementById('clear-password').value;
+  
+  if (u !== 'root') {
+    toast('Тільки root може очищати журнал', true);
+    return;
+  }
+
+  try {
+    // Проверяем пароль через логин
+    await api('/api/login', {method:'POST', body:{username:u, password:p}});
+    
+    // Если пароль верный — очищаем
+    await api('/api/audit/clear', {method:'POST'});
+    
+    toast('Журнал успішно очищено');
+    closeModal();
+    renderAudit();
+  } catch(err) {
+    toast(err.message || 'Невірний пароль', true);
+  }
+}
+window.confirmClearAudit = confirmClearAudit;
+
+function downloadAudit() {
+  // Скачиваем журнал в виде красивого HTML, который открывается в Excel
+  api('/api/audit').then(function(logs){
+    if(!logs.length){ toast('Журнал порожній', true); return; }
+    
+    var labels={login:'Вхід',login_fail:'Невдалий вхід',logout:'Вихід',client_create:'Створення',client_update:'Оновлення',client_delete:'Видалення',interaction_add:'Взаємодія',password_change:'Пароль',user_create:'Юзер+',user_update:'Юзер~',user_delete:'Юзер-',lang_change:'Мова',audit_clear:'Очищення'};
+    
+    var headers = ['Час', 'Користувач', 'IP', 'Дія', 'Об\'єкт'];
+    var html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>';
+    html += 'table { border-collapse: collapse; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; }';
+    html += 'th { background-color: #1a1a1a; color: #ffffff; padding: 10px; border: 1px solid #333; text-align: left; }';
+    html += 'td { padding: 8px 10px; border: 1px solid #ccc; color: #333; }';
+    html += 'tr:nth-child(even) td { background-color: #f9f9f9; }';
+    html += '</style></head><body><table><thead><tr>';
+    headers.forEach(function(h){ html += '<th>'+h+'</th>'; });
+    html += '</tr></thead><tbody>';
+    
+    logs.forEach(function(l){
+      html += '<tr>';
+      html += '<td>'+fmtDate(l.created_at)+'</td>';
+      html += '<td><b>'+esc(l.user_name||'system')+'</b></td>';
+      html += '<td>'+esc(l.ip||'—')+'</td>';
+      html += '<td>'+esc(labels[l.action]||l.action)+'</td>';
+      html += '<td>'+esc(l.entity||'—')+'</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></body></html>';
+    
+    var blob = new Blob([html], {type: 'application/vnd.ms-excel'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'qerner_audit_'+new Date().toISOString().slice(0,10)+'.xls';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Журнал скачано');
+  }).catch(function(e){ toast(e.message, true); });
+}
+window.downloadAudit = downloadAudit;
 
 /* НАСТРОЙКИ */
 var SETTINGS_TABS=[
