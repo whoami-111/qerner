@@ -9,8 +9,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 # --- Настройки ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Используем /tmp, так как это единственная папка для записи на Render
-DB_PATH = "/tmp/qerner.db"
+# На Render используем /tmp для записи
+if os.environ.get("RENDER"):
+    DB_PATH = "/tmp/qerner.db"
+else:
+    DB_PATH = os.path.join(BASE_DIR, "qerner.db")
 
 app = Flask(__name__, static_folder=None)
 CORS(app, supports_credentials=True)
@@ -70,6 +73,9 @@ def init_db():
                    'root', 'uk', 1, 1, now_iso()))
     conn.commit()
     conn.close()
+
+# ВАЖНО: Вызываем создание базы данных СРАЗУ при загрузке файла!
+init_db()
 
 # --- ХЕЛПЕРЫ ---
 def json_error(msg, code=400):
@@ -374,6 +380,5 @@ def health():
 
 # --- ЗАПУСК (для Render.com) ---
 if __name__ == "__main__":
-    init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
