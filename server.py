@@ -9,7 +9,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 # --- Настройки ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "qerner.db")
+# На Render файловая система временная, поэтому используем /tmp для базы
+if os.environ.get("RENDER"):
+    DB_PATH = "/tmp/qerner.db"
+else:
+    DB_PATH = os.path.join(BASE_DIR, "qerner.db")
 
 app = Flask(__name__, static_folder=None)
 CORS(app, supports_credentials=True)
