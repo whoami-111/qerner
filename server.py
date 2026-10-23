@@ -391,18 +391,37 @@ def list_audit():
     return jsonify([dict(r) for r in rows])
 
 @app.route("/api/audit/clear", methods=["POST"])
-@require_auth
-def clear_audit():
-    # Проверяем не по имени, а по системной роли
-    if g.user["role"] != "root":
-        return json_error("Недостатньо прав для очищення журналу", 403)
+def clear_audit_secure():
+    data = request.get_json() or {}
+    u = (data.get("username") or "").strip()
+    p = data.get("password") or ""
     
+    if not u or not p:
+        return json_error("Введіть логін та пароль")
+        
     conn = get_db()
-    c = conn.cursor()
+    c = conn.cursor(row_factory=dict_row)
+    
+    # 1. Проверяем, существует ли такой пользователь и верный ли пароль
+    c.execute("SELECT * FROM users WHERE username=%s", (u,))
+    user = c.fetchone()
+    
+    if not user or not check_password_hash(user["password_hash"], p):
+        conn.close()
+        return json_error("Невірний логін або пароль", 401)
+        
+    # 2. Проверяем, является ли он главным админом (по системной роли)
+    if user["role"] != "root":
+        conn.close()
+        return json_error("Недостатньо прав для очищення", 403)
+        
+    # 3. Если всё ок — очищаем
     c.execute("DELETE FROM audit")
     conn.close()
     
-    log_action("audit_clear", "system", "Журнал було очищено", g.user["username"])
+    # Записываем в журнал, что очистка произошла
+    log_action("audit_clear", "system", "Журнал очищено", u)
+    
     return jsonify({"ok": True})
 
 @app.route("/api/health")
