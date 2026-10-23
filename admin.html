@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="format-detection" content="telephone=no">
 <title>Qerner Admin</title>
-<!-- Подключаем jsPDF для генерации документов -->
+<!-- Подключаем jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -478,7 +478,15 @@ var I18N = {
     menu_logout: 'Вийти', btn_new_client: 'Новий клієнт', btn_all: 'Всі', btn_excel: '↓ Excel', btn_new: 'Новий',
     btn_back: '← Назад', clients_records: 'записів', filter_src: 'Джерела', filter_tech: 'Техніка',
     chart_src: 'Джерела клієнтів', chart_tech: 'Техніка', dash_recent: 'Остання активність',
-    settings_profile: 'Профіль', settings_security: 'Безпека', settings_lang: 'Мова', settings_users: 'Користувачі'
+    settings_profile: 'Профіль', settings_security: 'Безпека', settings_lang: 'Мова', settings_users: 'Користувачі',
+    form_new_client: 'Новий клієнт', form_edit_client: 'Редагувати', form_save: 'Зберегти', form_cancel: 'Скасувати',
+    form_pib: 'ПІБ', form_source: 'Джерело', form_status: 'Статус', form_phone: 'Телефон', form_tg: 'Telegram', form_viber: 'Viber',
+    form_messenger: 'Месенджер', form_city: 'Місто', form_district: 'Район', form_address: 'Адреса', form_tech: 'Техніка',
+    form_model: 'Модель', form_problem: 'Проблема', form_company: 'Компанія', form_edrpou: 'ЄДРПОУ', form_notes: 'Нотатки',
+    form_photo: 'Фото', form_upload: 'Завантажити фото', form_order_num: '№ замовлення',
+    th_client: 'Клієнт', th_source: 'Джерело', th_tech: 'Техніка', th_contact: 'Контакт', th_status: 'Статус', th_actions: 'Дії',
+    msg_delete_client: 'Видалити клієнта?', msg_saved: 'Збережено', msg_deleted: 'Видалено', msg_error: 'Помилка',
+    audit_obj: 'Об\'єкт', audit_action: 'Дія', audit_user: 'Користувач', audit_time: 'Час'
   },
   ru: {
     setup_title: 'Подключение к серверу', setup_desc: 'Введите адрес вашего Qerner Server.', setup_btn: 'Подключиться',
@@ -488,7 +496,15 @@ var I18N = {
     menu_logout: 'Выйти', btn_new_client: 'Новый клиент', btn_all: 'Все', btn_excel: '↓ Excel', btn_new: 'Новый',
     btn_back: '← Назад', clients_records: 'записей', filter_src: 'Источники', filter_tech: 'Техника',
     chart_src: 'Источники клиентов', chart_tech: 'Техника', dash_recent: 'Последняя активность',
-    settings_profile: 'Профиль', settings_security: 'Безопасность', settings_lang: 'Язык', settings_users: 'Пользователи'
+    settings_profile: 'Профиль', settings_security: 'Безопасность', settings_lang: 'Язык', settings_users: 'Пользователи',
+    form_new_client: 'Новый клиент', form_edit_client: 'Редактировать', form_save: 'Сохранить', form_cancel: 'Отмена',
+    form_pib: 'ФИО', form_source: 'Источник', form_status: 'Статус', form_phone: 'Телефон', form_tg: 'Telegram', form_viber: 'Viber',
+    form_messenger: 'Мессенджер', form_city: 'Город', form_district: 'Район', form_address: 'Адрес', form_tech: 'Техника',
+    form_model: 'Модель', form_problem: 'Проблема', form_company: 'Компания', form_edrpou: 'ЕДРПОУ', form_notes: 'Заметки',
+    form_photo: 'Фото', form_upload: 'Загрузить фото', form_order_num: '№ заказа',
+    th_client: 'Клиент', th_source: 'Источник', th_tech: 'Техника', th_contact: 'Контакт', th_status: 'Статус', th_actions: 'Действия',
+    msg_delete_client: 'Удалить клиента?', msg_saved: 'Сохранено', msg_deleted: 'Удалено', msg_error: 'Ошибка',
+    audit_obj: 'Объект', audit_action: 'Действие', audit_user: 'Пользователь', audit_time: 'Время'
   },
   en: {
     setup_title: 'Server Connection', setup_desc: 'Enter your Qerner Server address.', setup_btn: 'Connect',
@@ -498,7 +514,15 @@ var I18N = {
     menu_logout: 'Logout', btn_new_client: 'New Client', btn_all: 'All', btn_excel: '↓ Excel', btn_new: 'New',
     btn_back: '← Back', clients_records: 'records', filter_src: 'Sources', filter_tech: 'Tech',
     chart_src: 'Client Sources', chart_tech: 'Tech', dash_recent: 'Recent Activity',
-    settings_profile: 'Profile', settings_security: 'Security', settings_lang: 'Language', settings_users: 'Users'
+    settings_profile: 'Profile', settings_security: 'Security', settings_lang: 'Language', settings_users: 'Users',
+    form_new_client: 'New Client', form_edit_client: 'Edit', form_save: 'Save', form_cancel: 'Cancel',
+    form_pib: 'Full Name', form_source: 'Source', form_status: 'Status', form_phone: 'Phone', form_tg: 'Telegram', form_viber: 'Viber',
+    form_messenger: 'Messenger', form_city: 'City', form_district: 'District', form_address: 'Address', form_tech: 'Tech',
+    form_model: 'Model', form_problem: 'Problem', form_company: 'Company', form_edrpou: 'Tax ID', form_notes: 'Notes',
+    form_photo: 'Photos', form_upload: 'Upload photo', form_order_num: 'Order #',
+    th_client: 'Client', th_source: 'Source', th_tech: 'Tech', th_contact: 'Contact', th_status: 'Status', th_actions: 'Actions',
+    msg_delete_client: 'Delete client?', msg_saved: 'Saved', msg_deleted: 'Deleted', msg_error: 'Error',
+    audit_obj: 'Object', audit_action: 'Action', audit_user: 'User', audit_time: 'Time'
   }
 };
 
@@ -512,7 +536,7 @@ var tempPhotos=[];
 var clientsCache=[];
 var currentPhotoIndex=0,currentPhotoList=[];
 
-// Реквизиты по умолчанию (потом можно вынести в настройки)
+// Реквизиты по умолчанию
 var COMPANY_INFO = {
     name: 'ФОП Ваше Ім\'я',
     unp: '1234567890',
@@ -740,8 +764,8 @@ function renderClients(){
 }
 
 function renderDesktopTable(clients,withActions){
-  var html='<table><thead><tr><th>Клієнт</th><th>Джерело</th><th>Техніка</th><th>Контакт</th><th>Статус</th>';
-  if(withActions)html+='<th style="text-align:right">Дії</th>';
+  var html='<table><thead><tr><th data-i18n="th_client">'+tr('th_client')+'</th><th data-i18n="th_source">'+tr('th_source')+'</th><th data-i18n="th_tech">'+tr('th_tech')+'</th><th data-i18n="th_contact">'+tr('th_contact')+'</th><th data-i18n="th_status">'+tr('th_status')+'</th>';
+  if(withActions)html+='<th style="text-align:right" data-i18n="th_actions">'+tr('th_actions')+'</th>';
   html+='</tr></thead><tbody>';
   clients.forEach(function(c){
     html+='<tr><td><div class="cell-main"><div class="cell-avatar">'+esc(initials(c.full_name))+'</div><div class="cell-info"><div class="primary">'+esc(c.full_name)+'</div><div class="secondary">'+(c.order_number||'')+'</div></div></div></td>'+
@@ -762,10 +786,10 @@ function renderDesktopTable(clients,withActions){
 function renderMobileCard(c){
   return '<div class="mob-card">'+
     '<div class="mob-card-head"><div class="cell-avatar">'+esc(initials(c.full_name))+'</div><div class="mob-card-name"><div class="n">'+esc(c.full_name)+'</div><div class="o">'+(c.order_number||'')+'</div></div><span class="status '+c.status+'">'+statusLabel(c.status)+'</span></div>'+
-    '<div class="mob-card-row"><span class="k">Телефон</span><span class="v">'+esc(c.phone||'—')+'</span></div>'+
-    '<div class="mob-card-row"><span class="k">Джерело</span><span class="v">'+(c.source?'<span class="source-badge '+c.source+'">'+esc(sourceLabel(c.source))+'</span>':'—')+'</span></div>'+
-    '<div class="mob-card-row"><span class="k">Техніка</span><span class="v">'+(c.tech_type?'<span class="tech-badge">'+esc(techLabel(c.tech_type))+'</span>':'—')+'</span></div>'+
-    '<div class="mob-card-actions"><button class="btn" onclick="openClient('+c.id+')">Відкрити</button><button class="btn" onclick="editClient('+c.id+')">✎ Змінити</button></div></div>';
+    '<div class="mob-card-row"><span class="k">'+tr('form_phone')+'</span><span class="v">'+esc(c.phone||'—')+'</span></div>'+
+    '<div class="mob-card-row"><span class="k">'+tr('form_source')+'</span><span class="v">'+(c.source?'<span class="source-badge '+c.source+'">'+esc(sourceLabel(c.source))+'</span>':'—')+'</span></div>'+
+    '<div class="mob-card-row"><span class="k">'+tr('form_tech')+'</span><span class="v">'+(c.tech_type?'<span class="tech-badge">'+esc(techLabel(c.tech_type))+'</span>':'—')+'</span></div>'+
+    '<div class="mob-card-actions"><button class="btn" onclick="openClient('+c.id+')">Відкрити</button><button class="btn" onclick="editClient('+c.id+')">✎ '+tr('form_edit_client')+'</button></div></div>';
 }
 
 function renderPagination(total){
@@ -785,7 +809,7 @@ window.goToPage=goToPage;
 /* ФОРМА КЛИЕНТА */
 function openClientForm(id){
   id=id||null;tempPhotos=[];
-  document.getElementById('modal-title').textContent=id?'Редагувати':'Новий клієнт';
+  document.getElementById('modal-title').textContent=id?tr('form_edit_client'):tr('form_new_client');
   var c=id?clientsCache.filter(function(x){return x.id===id;})[0]:null;
   if(c&&c.photos)tempPhotos=c.photos.slice();
 
@@ -793,18 +817,18 @@ function openClientForm(id){
   var techOpts=Object.keys(TECHNOLOGIES).map(function(k){return '<option value="'+k+'">'+TECHNOLOGIES[k]+'</option>';}).join('');
 
   var html='<form onsubmit="saveClient(event)"><div class="modal-body"><input type="hidden" id="f-id" value="'+(id||'')+'">';
-  if(c&&c.order_number)html+='<div class="form-row full"><div class="form-group"><label>№ замовлення</label><input class="form-input mono" value="'+esc(c.order_number)+'" disabled></div></div>';
-  html+='<div class="form-row full"><div class="form-group"><label>ПІБ *</label><input class="form-input" id="f-full_name" required></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label>Джерело *</label><select class="form-input" id="f-source" required><option value="">— Оберіть —</option>'+sourceOpts+'</select></div><div class="form-group"><label>Статус</label><select class="form-input" id="f-status"><option value="active">Активний</option><option value="lead">Лід</option><option value="vip">VIP</option><option value="inactive">Неактивний</option></select></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label>Телефон *</label><input class="form-input mono" id="f-phone" required placeholder="+380..."></div><div class="form-group"><label>Telegram</label><input class="form-input" id="f-telegram" placeholder="@username"></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label>Viber</label><input class="form-input mono" id="f-viber" placeholder="+380..."></div><div class="form-group"><label>Месенджер</label><select class="form-input" id="f-preferred_messenger"><option value="phone">Телефон</option><option value="telegram">Telegram</option><option value="viber">Viber</option></select></div></div>';
-  html+='<div class="form-row three"><div class="form-group"><label>Місто</label><input class="form-input" id="f-city"></div><div class="form-group"><label>Район</label><input class="form-input" id="f-district"></div><div class="form-group"><label>Адреса</label><input class="form-input" id="f-address"></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label>Техніка *</label><select class="form-input" id="f-tech_type" required><option value="">— Оберіть —</option>'+techOpts+'</select></div><div class="form-group"><label>Модель</label><input class="form-input" id="f-tech_model"></div></div>';
-  html+='<div class="form-row full"><div class="form-group"><label>Проблема *</label><textarea class="form-input" id="f-problem" rows="2" required></textarea></div></div>';
-  html+='<div class="form-row"><div class="form-group"><label>Компанія</label><input class="form-input" id="f-company"></div><div class="form-group"><label>ЄДРПОУ</label><input class="form-input mono" id="f-edrpou" maxlength="12"></div></div>';
-  html+='<div class="form-row full"><div class="form-group"><label>Нотатки</label><textarea class="form-input" id="f-notes" rows="2"></textarea></div></div>';
-  html+='<div class="form-row full"><div class="form-group"><label>Фото</label><div class="photo-grid" id="photo-grid"></div><div class="photo-upload" onclick="document.getElementById(\'photo-input\').click()">+ Завантажити фото</div></div></div>';
-  html+='</div><div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">Скасувати</button><button type="submit" class="btn primary">Зберегти</button></div></form>';
+  if(c&&c.order_number)html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_order_num')+'</label><input class="form-input mono" value="'+esc(c.order_number)+'" disabled></div></div>';
+  html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_pib')+' *</label><input class="form-input" id="f-full_name" required></div></div>';
+  html+='<div class="form-row"><div class="form-group"><label>'+tr('form_source')+' *</label><select class="form-input" id="f-source" required><option value="">— Оберіть —</option>'+sourceOpts+'</select></div><div class="form-group"><label>'+tr('form_status')+'</label><select class="form-input" id="f-status"><option value="active">Активний</option><option value="lead">Лід</option><option value="vip">VIP</option><option value="inactive">Неактивний</option></select></div></div>';
+  html+='<div class="form-row"><div class="form-group"><label>'+tr('form_phone')+' *</label><input class="form-input mono" id="f-phone" required placeholder="+380..."></div><div class="form-group"><label>'+tr('form_tg')+'</label><input class="form-input" id="f-telegram" placeholder="@username"></div></div>';
+  html+='<div class="form-row"><div class="form-group"><label>'+tr('form_viber')+'</label><input class="form-input mono" id="f-viber" placeholder="+380..."></div><div class="form-group"><label>'+tr('form_messenger')+'</label><select class="form-input" id="f-preferred_messenger"><option value="phone">Телефон</option><option value="telegram">Telegram</option><option value="viber">Viber</option></select></div></div>';
+  html+='<div class="form-row three"><div class="form-group"><label>'+tr('form_city')+'</label><input class="form-input" id="f-city"></div><div class="form-group"><label>'+tr('form_district')+'</label><input class="form-input" id="f-district"></div><div class="form-group"><label>'+tr('form_address')+'</label><input class="form-input" id="f-address"></div></div>';
+  html+='<div class="form-row"><div class="form-group"><label>'+tr('form_tech')+' *</label><select class="form-input" id="f-tech_type" required><option value="">— Оберіть —</option>'+techOpts+'</select></div><div class="form-group"><label>'+tr('form_model')+'</label><input class="form-input" id="f-tech_model"></div></div>';
+  html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_problem')+' *</label><textarea class="form-input" id="f-problem" rows="2" required></textarea></div></div>';
+  html+='<div class="form-row"><div class="form-group"><label>'+tr('form_company')+'</label><input class="form-input" id="f-company"></div><div class="form-group"><label>'+tr('form_edrpou')+'</label><input class="form-input mono" id="f-edrpou" maxlength="12"></div></div>';
+  html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_notes')+'</label><textarea class="form-input" id="f-notes" rows="2"></textarea></div></div>';
+  html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_photo')+'</label><div class="photo-grid" id="photo-grid"></div><div class="photo-upload" onclick="document.getElementById(\'photo-input\').click()">+ '+tr('form_upload')+'</div></div></div>';
+  html+='</div><div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">'+tr('form_cancel')+'</button><button type="submit" class="btn primary">'+tr('form_save')+'</button></div></form>';
   document.getElementById('modal-content').innerHTML=html;
 
   var F=['full_name','company','edrpou','phone','telegram','viber','city','district','address','preferred_messenger','status','source','tech_type','tech_model','problem','notes'];
@@ -859,7 +883,7 @@ async function saveClient(e){
   F.forEach(function(f){var el=document.getElementById('f-'+f);if(el)data[f]=el.value.trim();});
   data.photos=tempPhotos.slice();
   try{
-    if(id){await api('/api/clients/'+id,{method:'PUT',body:data});toast('Оновлено');}
+    if(id){await api('/api/clients/'+id,{method:'PUT',body:data});toast(tr('msg_saved'));}
     else{var res=await api('/api/clients',{method:'POST',body:data});toast('Створено · '+res.order_number);}
     closeModal();await loadClients();renderClients();renderDashboard();
   }catch(err){toast(err.message,true);}
@@ -871,8 +895,8 @@ function editClient(id){openClientForm(id);}
 window.editClient=editClient;
 
 async function deleteClient(id){
-  if(!confirm('Видалити клієнта?'))return;
-  try{await api('/api/clients/'+id,{method:'DELETE'});toast('Видалено');await loadClients();renderClients();renderDashboard();}
+  if(!confirm(tr('msg_delete_client')))return;
+  try{await api('/api/clients/'+id,{method:'DELETE'});toast(tr('msg_deleted'));await loadClients();renderClients();renderDashboard();}
   catch(err){toast(err.message,true);}
 }
 window.deleteClient=deleteClient;
@@ -882,9 +906,9 @@ async function openClient(id){
   var c=clientsCache.filter(function(x){return x.id===id;})[0];if(!c)return;
   showPage('client-detail');
   var phone=(c.phone||'').replace(/[^\d]/g,''), tg=(c.telegram||'').replace('@','');
-  var msgrHtml='<a class="msgr'+(phone?'':' disabled')+'" href="'+(phone?'tel:+'+phone:'#')+'">Телефон</a>'+
-    '<a class="msgr'+(tg?'':' disabled')+'" href="'+(tg?'https://t.me/'+tg:'#')+'" target="_blank">Telegram</a>'+
-    '<a class="msgr'+(phone?'':' disabled')+'" href="'+(phone?'viber://chat?number=%2B'+phone:'#')+'">Viber</a>';
+  var msgrHtml='<a class="msgr'+(phone?'':' disabled')+'" href="'+(phone?'tel:+'+phone:'#')+'">'+tr('form_phone')+'</a>'+
+    '<a class="msgr'+(tg?'':' disabled')+'" href="'+(tg?'https://t.me/'+tg:'#')+'" target="_blank">'+tr('form_tg')+'</a>'+
+    '<a class="msgr'+(phone?'':' disabled')+'" href="'+(phone?'viber://chat?number=%2B'+phone:'#')+'">'+tr('form_viber')+'</a>';
 
   var interactions=[];
   try{interactions=await api('/api/clients/'+id+'/interactions');}catch(e){}
@@ -893,8 +917,8 @@ async function openClient(id){
   }).join(''):'<div class="empty"><div class="empty-title">Немає взаємодій</div></div>';
 
   var photosHtml=c.photos&&c.photos.length
-    ?'<div class="panel"><div class="panel-head"><div class="panel-title">Фото ('+c.photos.length+')</div></div><div class="panel-body"><div class="photo-grid">'+c.photos.map(function(p,i){return '<div class="photo-item" onclick="openPhotoViewer('+c.id+','+i+')"><img src="'+p+'"></div>';}).join('')+'</div></div></div>'
-    :'<div class="panel"><div class="panel-head"><div class="panel-title">Фото</div></div><div class="panel-body"><div class="empty"><div class="empty-title">Немає фото</div></div></div></div>';
+    ?'<div class="panel"><div class="panel-head"><div class="panel-title">'+tr('form_photo')+' ('+c.photos.length+')</div></div><div class="panel-body"><div class="photo-grid">'+c.photos.map(function(p,i){return '<div class="photo-item" onclick="openPhotoViewer('+c.id+','+i+')"><img src="'+p+'"></div>';}).join('')+'</div></div></div>'
+    :'<div class="panel"><div class="panel-head"><div class="panel-title">'+tr('form_photo')+'</div></div><div class="panel-body"><div class="empty"><div class="empty-title">Немає фото</div></div></div></div>';
 
   document.getElementById('client-detail-content').innerHTML=
     '<div class="detail-head"><div class="detail-avatar">'+esc(initials(c.full_name))+'</div><div class="detail-meta"><div class="detail-name">'+esc(c.full_name)+'</div><div class="detail-sub">'+
@@ -902,11 +926,11 @@ async function openClient(id){
     (c.source?'<span class="source-badge '+c.source+'">'+esc(sourceLabel(c.source))+'</span>':'')+
     (c.tech_type?'<span class="tech-badge">'+esc(techLabel(c.tech_type))+'</span>':'')+
     '<span class="status '+c.status+'">'+statusLabel(c.status)+'</span></div></div>'+
-    '<div class="detail-actions"><button class="btn" onclick="editClient('+c.id+')">✎ Змінити</button>'+(currentUser.role==='root'?'<button class="btn danger" onclick="deleteClient('+c.id+')">Видалити</button>':'')+'<button class="btn primary" onclick="generateAct('+c.id+')" style="margin-left:8px">📄 Згенерувати Акт</button></div></div>'+
+    '<div class="detail-actions"><button class="btn" onclick="editClient('+c.id+')">✎ '+tr('form_edit_client')+'</button>'+(currentUser.role==='root'?'<button class="btn danger" onclick="deleteClient('+c.id+')">Видалити</button>':'')+'<button class="btn primary" onclick="generateAct('+c.id+')" style="margin-left:8px">📄 Згенерувати Акт</button></div></div>'+
     '<div class="grid-2"><div class="panel"><div class="panel-head"><div class="panel-title">Дані</div></div><div class="panel-body" style="padding:0"><div class="kv-list">'+
-      kv('№ замовлення',c.order_number,true)+kv('Телефон',c.phone,true)+kv('Telegram',c.telegram)+kv('Viber',c.viber,true)+
-      kv('Місто',c.city)+kv('Район',c.district)+kv('Адреса',c.address)+
-      kv('Техніка',c.tech_type?techLabel(c.tech_type):'—')+kv('Модель',c.tech_model)+kv('Проблема',c.problem)+
+      kv(tr('form_order_num'),c.order_number,true)+kv(tr('form_phone'),c.phone,true)+kv(tr('form_tg'),c.telegram)+kv(tr('form_viber'),c.viber,true)+
+      kv(tr('form_city'),c.city)+kv(tr('form_district'),c.district)+kv(tr('form_address'),c.address)+
+      kv(tr('form_tech'),c.tech_type?techLabel(c.tech_type):'—')+kv(tr('form_model'),c.tech_model)+kv(tr('form_problem'),c.problem)+
       kv('Заніс',c.created_by)+kv('Створено',fmtDate(c.created_at))+
     '</div></div></div>'+
     '<div class="panel"><div class="panel-head"><div class="panel-title">Зв\'язок</div></div><div class="panel-body"><div class="messenger-grid" style="margin-bottom:14px">'+msgrHtml+'</div><form onsubmit="addInteraction(event,'+c.id+')" style="display:flex;flex-direction:column;gap:8px"><select class="form-input" id="int-channel"><option value="phone">Телефон</option><option value="telegram">Telegram</option><option value="viber">Viber</option><option value="note">Нотатка</option></select><input class="form-input" id="int-subject" placeholder="Тема"><textarea class="form-input" id="int-body" placeholder="Коментар" rows="2"></textarea><button type="submit" class="btn primary">Додати</button></form></div></div></div>'+
@@ -1057,11 +1081,11 @@ function renderAnalytics(){
   var cities={};clients.forEach(function(c){if(c.city)cities[c.city]=(cities[c.city]||0)+1;});
   var topCities=Object.keys(cities).map(function(k){return{name:k,count:cities[k]};}).sort(function(a,b){return b.count-a.count;}).slice(0,8);
 
-  var html='<div class="grid-2"><div class="panel"><div class="panel-head"><div class="panel-title">Джерела</div></div><div class="panel-body">';
+  var html='<div class="grid-2"><div class="panel"><div class="panel-head"><div class="panel-title">'+tr('th_source')+'</div></div><div class="panel-body">';
   srcStats.forEach(function(s){html+='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>'+sourceLabel(s.key)+' ('+sourceCode(s.key)+')</span><span style="font-family:var(--mono)">'+s.count+'</span></div><div style="height:3px;background:var(--surface-3);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+Math.round(s.count/maxSrc*100)+'%;background:var(--text-2)"></div></div></div>';});
-  html+='</div></div><div class="panel"><div class="panel-head"><div class="panel-title">Техніка</div></div><div class="panel-body">';
+  html+='</div></div><div class="panel"><div class="panel-head"><div class="panel-title">'+tr('th_tech')+'</div></div><div class="panel-body">';
   techStats.forEach(function(s){html+='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>'+techLabel(s.key)+'</span><span style="font-family:var(--mono)">'+s.count+'</span></div><div style="height:3px;background:var(--surface-3);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+Math.round(s.count/maxTech*100)+'%;background:var(--info)"></div></div></div>';});
-  html+='</div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">Міста</div></div><div class="panel-body">';
+  html+='</div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">'+tr('form_city')+'</div></div><div class="panel-body">';
   if(!topCities.length)html+=emptyState('◌','Немає даних','');
   else topCities.forEach(function(c){html+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:13px"><span>'+esc(c.name)+'</span><span style="font-family:var(--mono)">'+c.count+'</span></div>';});
   html+='</div></div>';
@@ -1073,8 +1097,8 @@ async function renderAudit(){
   var logs=[];try{logs=await api('/api/audit');}catch(e){}
   if(!logs.length){document.getElementById('audit-table').innerHTML=emptyState('▦','Журнал порожній','');return;}
   var labels={login:'Вхід',login_fail:'Невдалий',logout:'Вихід',client_create:'Створення',client_update:'Оновлення',client_delete:'Видалення',interaction_add:'Взаємодія',password_change:'Пароль',user_create:'Юзер+',user_update:'Юзер~',user_delete:'Юзер-',lang_change:'Мова'};
-  var html='<table><thead><tr><th>Час</th><th>Користувач</th><th>Дія</th><th>Об\'єкт</th></tr></thead><tbody>';
-  logs.slice(0,300).forEach(function(l){html+='<tr><td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3);white-space:nowrap">'+fmtDate(l.created_at)+'</td><td style="font-family:var(--mono);font-size:11.5px">'+esc(l.user)+'</td><td><span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border-radius:3px;text-transform:uppercase">'+esc(labels[l.action]||l.action)+'</span></td><td style="font-size:12.5px">'+esc(l.entity||'—')+'</td></tr>';});
+  var html='<table><thead><tr><th>'+tr('audit_time')+'</th><th>'+tr('audit_user')+'</th><th>'+tr('audit_action')+'</th><th>'+tr('audit_obj')+'</th></tr></thead><tbody>';
+  logs.slice(0,300).forEach(function(l){html+='<tr><td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3);white-space:nowrap">'+fmtDate(l.created_at)+'</td><td style="font-family:var(--mono);font-size:11.5px">'+esc(l.user)+'</td><td><span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border-radius:3px;text-transform:uppercase">'+esc(labels[l.action]||l.action)+'</span></td><td style="font-size:12.5px;font-weight:600;color:var(--info)">'+esc(l.entity||'—')+'</td></tr>';});
   html+='</tbody></table>';document.getElementById('audit-table').innerHTML=html;
 }
 
@@ -1125,7 +1149,7 @@ function renderSettingsContent(){
     ];
     var html='<h3>'+tr('settings_lang')+'</h3><div style="font-size:13px;color:var(--text-2);margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">Змінюється тільки для вашого облікового запису.</div>';
     langs.forEach(function(l){html+='<div class="lang-opt '+(active===l.code?'selected':'')+'" onclick="selectLang(\''+l.code+'\')"><div class="lang-opt-flag">'+l.flag+'</div><div class="lang-opt-info"><div class="lang-opt-name">'+l.name+'</div></div><div class="lang-opt-check">'+(active===l.code?'✓':'')+'</div></div>';});
-    html+='<div class="lang-actions"><button class="btn" onclick="cancelLang()">Скасувати</button><button class="btn primary" onclick="applyLangBtn()" '+(active===currentUser.lang?'disabled':'')+'>Застосувати</button></div>';
+    html+='<div class="lang-actions"><button class="btn" onclick="cancelLang()">'+tr('form_cancel')+'</button><button class="btn primary" onclick="applyLangBtn()" '+(active===currentUser.lang?'disabled':'')+'>Застосувати</button></div>';
     el.innerHTML=html;
   }
   else if(tab==='users'){
@@ -1154,7 +1178,7 @@ async function renderUsersTab(el){
   var users=[];try{users=await api('/api/users');}catch(e){}
   var html='<h3>'+tr('settings_users')+'</h3><div style="font-size:13px;color:var(--text-2);margin-bottom:16px">Тільки root може створювати адмінів.</div>';
   html+='<div style="margin-bottom:14px"><button class="btn primary" onclick="openUserForm()">+ Додати адміністратора</button></div>';
-  html+='<table class="users-table"><thead><tr><th>Логін</th><th>Email</th><th>Роль</th><th>Активний</th><th></th></tr></thead><tbody>';
+  html+='<table class="users-table"><thead><tr><th>'+tr('login_user')+'</th><th>Email</th><th>Роль</th><th>Активний</th><th></th></tr></thead><tbody>';
   users.forEach(function(u){html+='<tr><td style="font-family:var(--mono);font-weight:600">'+esc(u.username)+(u.role==='root'?' 👑':'')+'</td><td style="font-size:11.5px;color:var(--text-2)">'+esc(u.email||'—')+'</td><td><span class="role-badge '+u.role+'">'+u.role+'</span></td><td>'+(u.active?'✅':'❌')+'</td><td>'+(u.role==='root'?'':'<button class="btn sm icon danger" onclick="deleteUser('+u.id+')">✕</button>')+'</td></tr>';});
   html+='</tbody></table>';el.innerHTML=html;
 }
@@ -1162,7 +1186,7 @@ async function renderUsersTab(el){
 /* МОДАЛКИ НАСТРОЕК */
 function openChangePassword(){
   document.getElementById('modal-title').textContent='Змінити пароль';
-  var html='<form onsubmit="savePassword(event)"><div class="modal-body"><div class="form-row full"><div class="form-group"><label>Поточний</label><input class="form-input" type="password" id="pw-current" required></div></div><div class="form-row full"><div class="form-group"><label>Новий (мін. 8)</label><input class="form-input" type="password" id="pw-new" required minlength="8"></div></div></div><div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">Скасувати</button><button type="submit" class="btn primary">Зберегти</button></div></form>';
+  var html='<form onsubmit="savePassword(event)"><div class="modal-body"><div class="form-row full"><div class="form-group"><label>Поточний</label><input class="form-input" type="password" id="pw-current" required></div></div><div class="form-row full"><div class="form-group"><label>Новий (мін. 8)</label><input class="form-input" type="password" id="pw-new" required minlength="8"></div></div></div><div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">'+tr('form_cancel')+'</button><button type="submit" class="btn primary">'+tr('form_save')+'</button></div></form>';
   document.getElementById('modal-content').innerHTML=html;
   document.getElementById('modal').classList.add('open');
 }
@@ -1179,7 +1203,7 @@ window.savePassword=savePassword;
 
 function openUserForm(){
   document.getElementById('modal-title').textContent='Новий адміністратор';
-  var html='<form onsubmit="saveUser(event)"><div class="modal-body"><div class="form-row"><div class="form-group"><label>Логін *</label><input class="form-input mono" id="u-username" required></div><div class="form-group"><label>Email</label><input class="form-input" id="u-email" type="email"></div></div><div class="form-row full"><div class="form-group"><label>Пароль * (мін. 6)</label><input class="form-input" type="password" id="u-password" required minlength="6"></div></div></div><div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">Скасувати</button><button type="submit" class="btn primary">Створити</button></div></form>';
+  var html='<form onsubmit="saveUser(event)"><div class="modal-body"><div class="form-row"><div class="form-group"><label>'+tr('login_user')+' *</label><input class="form-input mono" id="u-username" required></div><div class="form-group"><label>Email</label><input class="form-input" id="u-email" type="email"></div></div><div class="form-row full"><div class="form-group"><label>'+tr('login_pass')+' * (мін. 6)</label><input class="form-input" type="password" id="u-password" required minlength="6"></div></div></div><div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">'+tr('form_cancel')+'</button><button type="submit" class="btn primary">Створити</button></div></form>';
   document.getElementById('modal-content').innerHTML=html;
   document.getElementById('modal').classList.add('open');
 }
