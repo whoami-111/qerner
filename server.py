@@ -99,7 +99,6 @@ def require_auth(f):
     return wrapper
 
 def get_real_ip():
-    # Достаем реальный IP из заголовков Render
     if request.headers.get('X-Forwarded-For'):
         return request.headers.get('X-Forwarded-For').split(',')[0].strip()
     return request.remote_addr or "unknown"
@@ -390,6 +389,20 @@ def list_audit():
     rows = c.fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+
+@app.route("/api/audit/clear", methods=["POST"])
+@require_auth
+def clear_audit():
+    if g.user["username"] != "root":
+        return json_error("Тільки головний адміністратор (root) може очищати журнал", 403)
+    
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM audit")
+    conn.close()
+    
+    log_action("audit_clear", "system", "Журнал було очищено", g.user["username"])
+    return jsonify({"ok": True})
 
 @app.route("/api/health")
 def health():
