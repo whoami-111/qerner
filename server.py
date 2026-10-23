@@ -151,7 +151,8 @@ def login():
     SESSIONS[tok] = {
         "user_id": user["id"], "username": user["username"],
         "role": user["role"], "lang": user["lang"],
-        "expires": datetime.utcnow() + timedelta(hours=SESSION_TTL_HOURS)
+        "expires": datetime.utcnow() + timedelta(hours=SESSION_TTL_HOURS),
+        "login_at": datetime.utcnow() # Записываем точное время входа
     }
     log_action("login", "user", u, u)
     conn.close()
@@ -341,6 +342,32 @@ def list_users():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
+@app.route("/api/users/status", methods=["GET"])
+@require_auth
+def users_status():
+    if g.user["role"] != "root": return json_error("Тільки root", 403)
+    
+    # Собираем уникальных пользователей, которые сейчас в сети
+    online_users = {}
+    now = datetime.utcnow()
+    
+    for tok, sess in SESSIONS.items():
+        if sess["expires"] > now:
+            u = sess["username"]
+            if u not in online_users or sess["login_at"] > online_users[u]:
+                online_users[u] = sess["login_at"]
+                
+    # Формируем ответ
+    out = {}
+    for u, dt in online_users.items():
+        # Считаем, сколько минут он в сети
+        diff = int((now - dt).total_seconds() / 60)
+        out[u] = {
+            "online": True,
+            "time_online": diff
+        }
+    return jsonify(out)
+
 @app.route("/api/users", methods=["POST"])
 @require_auth
 def create_user():
@@ -395,33 +422,20 @@ def clear_audit_secure():
     data = request.get_json() or {}
     u = (data.get("username") or "").strip()
     p = data.get("password") or ""
-    
-    if not u or not p:
-        return json_error("Введіть логін та пароль")
-        
+    if not u or not p: return json_error("Введіть логін та пароль")
     conn = get_db()
     c = conn.cursor(row_factory=dict_row)
-    
-    # 1. Проверяем, существует ли такой пользователь и верный ли пароль
     c.execute("SELECT * FROM users WHERE username=%s", (u,))
     user = c.fetchone()
-    
     if not user or not check_password_hash(user["password_hash"], p):
         conn.close()
         return json_error("Невірний логін або пароль", 401)
-        
-    # 2. Проверяем, является ли он главным админом (по системной роли)
     if user["role"] != "root":
         conn.close()
         return json_error("Недостатньо прав для очищення", 403)
-        
-    # 3. Если всё ок — очищаем
     c.execute("DELETE FROM audit")
     conn.close()
-    
-    # Записываем в журнал, что очистка произошла
     log_action("audit_clear", "system", "Журнал очищено", u)
-    
     return jsonify({"ok": True})
 
 @app.route("/api/health")
