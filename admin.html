@@ -294,6 +294,11 @@ tbody tr:last-child td{border-bottom:none}
   border-bottom: 1px solid var(--border-soft);
   vertical-align: middle;
 }
+/* Выравниваем заголовок и ячейки "Роль" по центру */
+.users-table th:nth-child(3),
+.users-table td:nth-child(3) {
+  text-align: center; 
+}
 .users-table tr:last-child td { border-bottom: none; }
 .users-table tr:hover td { background: var(--surface-2); }
 
@@ -335,6 +340,8 @@ tbody tr:last-child td{border-bottom:none}
     letter-spacing: 0.05em;
     content: attr(data-label);
   }
+  /* Возвращаем выравнивание по правому краю для мобилок, так как там блочная верстка */
+  .users-table td:nth-child(3) { text-align: right; }
 }
 
 /* Toast */
@@ -1476,10 +1483,10 @@ async function renderUsersTab(el){
   
   var html = '<h3>'+tr('settings_users')+'</h3>';
   
-  // Красивая плашка вместо скучного текста
+  // Современная плашка
   html += '<div class="users-header">'+
     '<span class="users-header-icon">🛡️</span>'+
-    '<div><b>Привілейований доступ.</b> Тільки головний адміністратор (root) має право створювати нових адміністраторів та керувати доступом.</div>'+
+    '<div><span style="color:var(--info); font-weight: 600;">Керування командою:</span> Створювати та видаляти акаунти адміністраторів може лише головний користувач (root).</div>'+
   '</div>';
   
   html += '<div style="margin-bottom:14px"><button class="btn primary" onclick="openUserForm()">+ Додати адміністратора</button></div>';
