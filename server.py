@@ -496,9 +496,12 @@ def delete_user(uid):
     if not row:
         conn.close()
         return json_error("Не знайдено", 404)
-    if row["role"] == "root":
+        
+    # Запрещаем удалять САМОГО СЕБЯ (по ID текущей сессии)
+    if uid == g.user["user_id"]:
         conn.close()
-        return json_error("Root не можна видалити")
+        return json_error("Ви не можете видалити свій власний акаунт")
+        
     c.execute("DELETE FROM users WHERE id=%s", (uid,))
     conn.close()
     log_action("user_delete", row["username"], "", g.user["username"])
