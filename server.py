@@ -434,6 +434,7 @@ def restore_backup():
     
     imported = 0
     updated = 0
+    has_changes = False
     
     # Восстанавливаем клиентов
     for item in data.get("clients", []):
@@ -445,6 +446,14 @@ def restore_backup():
             existing = c.fetchone()
             
             if existing:
+                # Проверяем, есть ли у клиента фото. Если в бэкапе они есть, а в базе нет - обновляем
+                c.execute("SELECT COUNT(*) FROM photos WHERE client_id=%s", (existing["id"],))
+                db_photos_count = c.fetchone()[0]
+                backup_photos_count = len(item.get("photos", []))
+                
+                if backup_photos_count > 0 and db_photos_count != backup_photos_count:
+                    has_changes = True
+                
                 updates = []
                 values = []
                 for f in CLIENT_FIELDS:
@@ -457,6 +466,16 @@ def restore_backup():
                     values.append(existing["id"])
                     c.execute(f"UPDATE clients SET {', '.join(updates)} WHERE id=%s", values)
                     updated += 1
+                    
+                # Если фото не совпадают по количеству, перезаписываем их
+                if backup_photos_count > 0 and db_photos_count != backup_photos_count:
+                    c.execute("DELETE FROM photos WHERE client_id=%s", (existing["id"],))
+                    for photo in item.get("photos", []):
+                        try:
+                            c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (existing["id"], photo, now_iso()))
+                        except Exception as e:
+                            print(f"Ошибка фото при обновлении {order}: {e}")
+                            continue
             else:
                 c.execute("""INSERT INTO clients
                     (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
@@ -464,6 +483,7 @@ def restore_backup():
                     (order, item.get("full_name", ""), item.get("phone", ""), item.get("telegram", ""), item.get("viber", ""), item.get("preferred_messenger", "phone"), item.get("city", ""), item.get("district", ""), item.get("address", ""), item.get("tech_type", ""), item.get("tech_model", ""), item.get("problem", ""), item.get("company", ""), item.get("edrpou", ""), item.get("notes", ""), item.get("source", ""), item.get("status", "active"), item.get("created_by", g.user["username"]), item.get("created_at", now_iso()), now_iso()))
                 cid = c.fetchone()["id"]
                 imported += 1
+                has_changes = True
                 
                 for photo in item.get("photos", []):
                     try:
@@ -476,12 +496,15 @@ def restore_backup():
             continue
 
     # Восстанавливаем историю
-    # ВАЖНО: Сначала удаляем старую историю, чтобы не было дублей
     if "interactions" in data:
+        c.execute("SELECT COUNT(*) FROM interactions")
+        db_int_count = c.fetchone()[0]
+        if len(data["interactions"]) != db_int_count:
+            has_changes = True
+            
         c.execute("DELETE FROM interactions")
         for it in data["interactions"]:
             try:
-                # Находим ID клиента по номеру заказа, который мы сохранили в JSON
                 order_num = it.get("order_number")
                 cid = None
                 if order_num:
@@ -499,6 +522,11 @@ def restore_backup():
                 
     # Восстанавливаем журнал
     if "audit" in data:
+        c.execute("SELECT COUNT(*) FROM audit")
+        db_audit_count = c.fetchone()[0]
+        if len(data["audit"]) != db_audit_count:
+            has_changes = True
+            
         c.execute("DELETE FROM audit")
         for l in data["audit"]:
             try:
@@ -512,10 +540,10 @@ def restore_backup():
     conn.close()
     log_action("db_restore", "system", f"Імпортовано: {imported}, Оновлено: {updated}", g.user["username"])
     
-    if imported == 0 and updated == 0:
-        return jsonify({"ok": True, "imported": 0, "updated": 0, "msg": "База вже актуальна. Змін не знайдено."})
+    if not has_changes:
+        return jsonify({"ok": True, "imported": 0, "updated": 0, "msg": "База вже актуальна. Всі дані на місці."})
         
-    return jsonify({"ok": True, "imported": imported, "updated": updated})
+    return jsonify({"ok": True, "imported": imported, "updated": updated, "msg": "Резервна копія успішно відновлена!"})
 
 @app.route("/api/clients/<int:cid>", methods=["DELETE"])
 @require_auth
