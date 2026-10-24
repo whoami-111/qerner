@@ -1528,7 +1528,7 @@ async function renderUsersTab(el){
       '<td data-label="Роль"><span class="role-badge '+u.role+'">'+u.role+'</span></td>'+
       '<td data-label="Активний">'+(u.active?'✅':'❌')+'</td>'+
       '<td data-label="Статус" id="status-'+u.username+'" style="font-size:12px" data-lastseen="'+esc(lastSeenText)+'"><span style="color:var(--text-3)">...</span></td>'+
-      '<td data-label="Дії" style="text-align:right">'+(u.role==='root'?'':'<button class="btn sm icon danger" onclick="deleteUser('+u.id+')">✕</button>')+'</td>'+
+      '<td data-label="Дії" style="text-align:right">'+(u.username===currentUser.username?'':'<button class="btn sm icon danger" onclick="deleteUser('+u.id+')">✕</button>')+'</td>'+
     '</tr>';
   });
   
