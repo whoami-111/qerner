@@ -404,8 +404,10 @@ def import_clients():
     
     for item in data:
         order = item.get("order_number")
-        if not order: continue
-        
+        if not order:
+            # Если нет номера, генерируем новый
+            order = next_order_number(prefix_for_source(item.get("source", "walkin")))
+            
         # Проверяем, есть ли уже такой клиент
         c.execute("SELECT id FROM clients WHERE order_number=%s", (order,))
         existing = c.fetchone()
