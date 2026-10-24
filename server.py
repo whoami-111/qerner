@@ -390,31 +390,59 @@ def update_client(cid):
     log_action("client_update", row["order_number"], f"{d.get('full_name')}", g.user["username"])
     return jsonify({"ok": True})
 
-@app.route("/api/clients/import", methods=["POST"])
+@app.route("/api/backup", methods=["GET"])
 @require_auth
-def import_clients():
-    data = request.get_json() or []
-    if not isinstance(data, list):
-        return json_error("Невірний формат файлу")
+def get_backup():
+    conn = get_db()
+    c = conn.cursor(row_factory=dict_row)
     
+    # 1. Клиенты
+    c.execute("SELECT * FROM clients ORDER BY id")
+    clients = []
+    for r in c.fetchall():
+        c.execute("SELECT data FROM photos WHERE client_id=%s ORDER BY id", (r["id"],))
+        photos = [p["data"] for p in c.fetchall()]
+        d = dict(r)
+        d["photos"] = photos
+        clients.append(d)
+        
+    # 2. История
+    c.execute("SELECT * FROM interactions ORDER BY id")
+    interactions = [dict(r) for r in c.fetchall()]
+    
+    # 3. Журнал
+    c.execute("SELECT * FROM audit ORDER BY id")
+    audit = [dict(r) for r in c.fetchall()]
+    
+    conn.close()
+    return jsonify({
+        "clients": clients,
+        "interactions": interactions,
+        "audit": audit
+    })
+
+@app.route("/api/backup", methods=["POST"])
+@require_auth
+def restore_backup():
+    data = request.get_json() or {}
+    if not isinstance(data, dict) or "clients" not in data:
+        return json_error("Невірний формат файлу")
+        
     conn = get_db()
     c = conn.cursor()
+    
+    # Восстанавливаем клиентов
     imported = 0
     updated = 0
-    
-    for item in data:
+    for item in data.get("clients", []):
         try:
             order = item.get("order_number")
-            if not order:
-                # Если нет номера, генерируем новый
-                order = next_order_number(prefix_for_source(item.get("source", "walkin")))
+            if not order: continue
                 
-            # Проверяем, есть ли уже такой клиент
             c.execute("SELECT id FROM clients WHERE order_number=%s", (order,))
             existing = c.fetchone()
             
             if existing:
-                # Обновляем
                 updates = []
                 values = []
                 for f in CLIENT_FIELDS:
@@ -428,7 +456,6 @@ def import_clients():
                     c.execute(f"UPDATE clients SET {', '.join(updates)} WHERE id=%s", values)
                     updated += 1
             else:
-                # Создаем
                 c.execute("""INSERT INTO clients
                     (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
@@ -436,7 +463,6 @@ def import_clients():
                 cid = c.fetchone()["id"]
                 imported += 1
                 
-                # Восстанавливаем фото, если они были в JSON
                 for photo in item.get("photos", []):
                     try:
                         c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
@@ -444,11 +470,35 @@ def import_clients():
                         print(f"Ошибка фото при импорте {order}: {e}")
                         continue
         except Exception as e:
-            print(f"Ошибка импорта {item.get('order_number', 'unknown')}: {e}")
+            print(f"Ошибка импорта клиента {item.get('order_number', 'unknown')}: {e}")
             continue
+
+    # Восстанавливаем историю (удаляем старую, вставляем новую)
+    if "interactions" in data:
+        c.execute("DELETE FROM interactions")
+        for it in data["interactions"]:
+            try:
+                c.execute("""INSERT INTO interactions (id, client_id, channel, subject, body, user_name, created_at) 
+                             VALUES (%s,%s,%s,%s,%s,%s,%s)""", 
+                          (it.get("id"), it.get("client_id"), it.get("channel"), it.get("subject"), it.get("body"), it.get("user_name"), it.get("created_at")))
+            except Exception as e:
+                print(f"Ошибка импорта истории: {e}")
+                continue
                 
+    # Восстанавливаем журнал (удаляем старый, вставляем новый)
+    if "audit" in data:
+        c.execute("DELETE FROM audit")
+        for l in data["audit"]:
+            try:
+                c.execute("""INSERT INTO audit (id, action, entity, details, user_name, ip, created_at) 
+                             VALUES (%s,%s,%s,%s,%s,%s,%s)""", 
+                          (l.get("id"), l.get("action"), l.get("entity"), l.get("details"), l.get("user_name"), l.get("ip"), l.get("created_at")))
+            except Exception as e:
+                print(f"Ошибка импорта журнала: {e}")
+                continue
+
     conn.close()
-    log_action("db_import", "system", f"Імпортовано: {imported}, Оновлено: {updated}", g.user["username"])
+    log_action("db_restore", "system", f"Імпортовано: {imported}, Оновлено: {updated}", g.user["username"])
     return jsonify({"ok": True, "imported": imported, "updated": updated})
 
 @app.route("/api/clients/<int:cid>", methods=["DELETE"])
@@ -507,7 +557,6 @@ def list_users():
 def users_status():
     if g.user["role"] != "root": return json_error("Тільки root", 403)
     
-    # Считаем пользователей, у которых последний ping был меньше 60 секунд назад
     online_users = {}
     now = datetime.utcnow()
     
@@ -558,7 +607,6 @@ def delete_user(uid):
         conn.close()
         return json_error("Не знайдено", 404)
         
-    # Запрещаем удалять САМОГО СЕБЯ (по ID текущей сессии)
     if uid == g.user["user_id"]:
         conn.close()
         return json_error("Ви не можете видалити свій власний акаунт")
