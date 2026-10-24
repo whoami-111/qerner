@@ -218,15 +218,20 @@ def change_username():
     d = request.get_json() or {}
     old_u = (d.get("old_username") or "").strip()
     new_u = (d.get("new_username") or "").strip()
-    captcha = (d.get("captcha") or "").strip()
+    new_u_confirm = (d.get("new_username_confirm") or "").strip()
+    password = d.get("password") or ""
+    captcha_passed = d.get("captcha_passed") or False
 
-    # 1. Проверка капчи (3 + 4 = 7)
-    if captcha != "7":
-        return json_error("Невірна відповідь на капчу")
+    # 1. Проверка капчи (фронтенд присылает True, если юзер выбрал правильные картинки)
+    if not captcha_passed:
+        return json_error("Помилка капчі. Спробуйте ще раз.")
 
     if not new_u:
         return json_error("Введіть новий логін")
         
+    if new_u != new_u_confirm:
+        return json_error("Нові логіни не співпадають")
+
     if old_u != g.user["username"]:
         return json_error("Невірний поточний логін")
 
@@ -236,16 +241,23 @@ def change_username():
     conn = get_db()
     c = conn.cursor(row_factory=dict_row)
     
-    # 2. Проверяем, не занят новый логин кем-то другим
+    # 2. Проверяем пароль текущего пользователя
+    c.execute("SELECT password_hash FROM users WHERE id=%s", (g.user["user_id"],))
+    user = c.fetchone()
+    if not check_password_hash(user["password_hash"], password):
+        conn.close()
+        return json_error("Невірний пароль")
+    
+    # 3. Проверяем, не занят новый логин
     c.execute("SELECT id FROM users WHERE username=%s", (new_u,))
     if c.fetchone():
         conn.close()
         return json_error("Цей логін вже зайнятий")
         
-    # 3. Обновляем логин в БД
+    # 4. Обновляем логин
     c.execute("UPDATE users SET username=%s WHERE id=%s", (new_u, g.user["user_id"]))
     
-    # Обновляем имя в текущей сессии, чтобы не выкинуло из системы
+    # Обновляем имя в текущей сессии
     tok = request.headers.get("X-Session-Token")
     if tok in SESSIONS:
         SESSIONS[tok]["username"] = new_u
