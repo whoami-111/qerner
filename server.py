@@ -446,8 +446,9 @@ def restore_backup():
             existing = c.fetchone()
             
             if existing:
+                cid = existing["id"]
                 # Проверяем, есть ли у клиента фото. Если в бэкапе они есть, а в базе нет - обновляем
-                c.execute("SELECT COUNT(*) FROM photos WHERE client_id=%s", (existing["id"],))
+                c.execute("SELECT COUNT(*) FROM photos WHERE client_id=%s", (cid,))
                 db_photos_count = c.fetchone()[0]
                 backup_photos_count = len(item.get("photos", []))
                 
@@ -463,16 +464,16 @@ def restore_backup():
                 if updates:
                     updates.append("updated_at=%s")
                     values.append(now_iso())
-                    values.append(existing["id"])
+                    values.append(cid)
                     c.execute(f"UPDATE clients SET {', '.join(updates)} WHERE id=%s", values)
                     updated += 1
                     
                 # Если фото не совпадают по количеству, перезаписываем их
                 if backup_photos_count > 0 and db_photos_count != backup_photos_count:
-                    c.execute("DELETE FROM photos WHERE client_id=%s", (existing["id"],))
+                    c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
                     for photo in item.get("photos", []):
                         try:
-                            c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (existing["id"], photo, now_iso()))
+                            c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
                         except Exception as e:
                             print(f"Ошибка фото при обновлении {order}: {e}")
                             continue
