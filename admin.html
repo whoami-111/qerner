@@ -344,6 +344,18 @@ tbody tr:last-child td{border-bottom:none}
   .users-table td:nth-child(3) { text-align: right; }
 }
 
+/* Мобильная адаптация для строк настроек */
+@media (max-width: 600px){
+  .settings-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .settings-row > div:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 /* Toast */
 #toast{position:fixed;bottom:20px;right:20px;padding:12px 18px;background:var(--surface);border:1px solid var(--border-strong);border-left:2px solid var(--active);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(20px);transition:all .25s;pointer-events:none;z-index:200;max-width:calc(100vw - 40px)}
 #toast.show{opacity:1;transform:translateY(0)}
@@ -1434,7 +1446,7 @@ function renderSettingsContent(){
 
   if(tab==='profile'){
     el.innerHTML='<h3>'+tr('settings_profile')+'</h3>'+
-      '<div class="settings-row"><div class="settings-row-label"><div class="name">'+tr('login_user')+'</div><div class="hint">Ваш логін в системі</div></div><div><span class="role-badge">'+esc(currentUser.username)+'</span></div></div>'+
+      '<div class="settings-row"><div class="settings-row-label"><div class="name">'+tr('login_user')+'</div><div class="hint">Ваш логін в системі</div></div><div style="display:flex; align-items:center; gap:10px"><span class="role-badge">'+esc(currentUser.username)+'</span><button class="btn sm" onclick="openChangeUsername()">Змінити</button></div></div>'+
       '<div class="settings-row"><div class="settings-row-label"><div class="name">Email</div><div class="hint">Контактна пошта</div></div><div><input class="settings-input" value="'+esc(currentUser.email||'')+'" disabled></div></div>'+
       '<div class="settings-row"><div class="settings-row-label"><div class="name">Роль</div><div class="hint">Рівень доступу</div></div><div><span class="role-badge '+currentUser.role+'">'+currentUser.role+'</span></div></div>';
   }
@@ -1571,6 +1583,52 @@ async function savePassword(e){
   return false;
 }
 window.savePassword=savePassword;
+
+function openChangeUsername(){
+  document.getElementById('modal-title').textContent='Змінити логін';
+  var html='<form onsubmit="saveUsername(event)">'+
+    '<div class="modal-body">'+
+      '<div class="form-row full"><div class="form-group"><label>Поточний логін</label><input class="form-input" id="un-current" required></div></div>'+
+      '<div class="form-row full"><div class="form-group"><label>Новий логін</label><input class="form-input" id="un-new" required></div></div>'+
+      '<div class="form-row full" style="margin-top:10px; background:var(--surface-2); padding:12px; border-radius:var(--radius-sm); border:1px dashed var(--border-strong)">'+
+        '<div class="form-group"><label>Капча (Скільки буде 3 + 4?)</label><input class="form-input" id="un-captcha" required placeholder="Введіть цифру" style="max-width:100px"></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">'+tr('form_cancel')+'</button><button type="submit" class="btn primary">Підтвердити</button></div></form>';
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal').classList.add('open');
+}
+window.openChangeUsername=openChangeUsername;
+
+async function saveUsername(e){
+  e.preventDefault();
+  var oldU = document.getElementById('un-current').value.trim();
+  var newU = document.getElementById('un-new').value.trim();
+  var captcha = document.getElementById('un-captcha').value.trim();
+  
+  try{
+    var res = await api('/api/me/username', {
+      method:'POST', 
+      body:{ old_username: oldU, new_username: newU, captcha: captcha }
+    });
+    
+    // Обновляем данные на лету
+    currentUser.username = res.new_username;
+    
+    // Обновляем UI в сайдбаре
+    document.getElementById('current-user').textContent = res.new_username;
+    document.getElementById('user-avatar').textContent = res.new_username[0].toUpperCase();
+    document.getElementById('dd-name').textContent = res.new_username;
+    
+    toast('Логін успішно змінено!');
+    closeModal();
+    renderSettingsContent(); // Перерисовываем профиль
+  }catch(err){
+    toast(err.message, true);
+  }
+  return false;
+}
+window.saveUsername=saveUsername;
 
 function openUserForm(){
   document.getElementById('modal-title').textContent='Новий адміністратор';
