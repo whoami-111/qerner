@@ -212,6 +212,49 @@ def change_password():
     log_action("password_change", "user", u["username"], g.user["username"])
     return jsonify({"ok": True})
 
+@app.route("/api/me/username", methods=["POST"])
+@require_auth
+def change_username():
+    d = request.get_json() or {}
+    old_u = (d.get("old_username") or "").strip()
+    new_u = (d.get("new_username") or "").strip()
+    captcha = (d.get("captcha") or "").strip()
+
+    # 1. Проверка капчи (3 + 4 = 7)
+    if captcha != "7":
+        return json_error("Невірна відповідь на капчу")
+
+    if not new_u:
+        return json_error("Введіть новий логін")
+        
+    if old_u != g.user["username"]:
+        return json_error("Невірний поточний логін")
+
+    if old_u == new_u:
+        return json_error("Новий логін співпадає зі старим")
+
+    conn = get_db()
+    c = conn.cursor(row_factory=dict_row)
+    
+    # 2. Проверяем, не занят новый логин кем-то другим
+    c.execute("SELECT id FROM users WHERE username=%s", (new_u,))
+    if c.fetchone():
+        conn.close()
+        return json_error("Цей логін вже зайнятий")
+        
+    # 3. Обновляем логин в БД
+    c.execute("UPDATE users SET username=%s WHERE id=%s", (new_u, g.user["user_id"]))
+    
+    # Обновляем имя в текущей сессии, чтобы не выкинуло из системы
+    tok = request.headers.get("X-Session-Token")
+    if tok in SESSIONS:
+        SESSIONS[tok]["username"] = new_u
+        
+    conn.close()
+    log_action("username_change", "user", f"{old_u} -> {new_u}", g.user["username"])
+    
+    return jsonify({"ok": True, "new_username": new_u})
+
 @app.route("/api/me/lang", methods=["POST"])
 @require_auth
 def set_lang():
