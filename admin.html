@@ -1596,7 +1596,8 @@ function openChangeUsername(){
       '<div class="form-row full"><div class="form-group"><label>Новий логін</label><input class="form-input" id="un-new" required></div></div>'+
       '<div class="form-row full"><div class="form-group"><label>Повторіть новий логін</label><input class="form-input" id="un-confirm" required></div></div>'+
       
-      '<div class="form-row full" style="margin-top:15px; display:flex; justify-content:center;">'+
+      // ВОТ ЭТОТ БЛОК БЫЛ ПОТЕРЯН
+      '<div class="form-row full" style="margin-top:15px; display:flex; justify-content:center; min-height:78px;" id="captcha-container">'+
         '<div class="g-recaptcha" data-sitekey="6LeZ-P4tAAAAAACl4g-Du2vzfrD7LoZrr-k-rJpUk"></div>'+
       '</div>'+
     '</div>'+
@@ -1614,10 +1615,16 @@ async function saveUsername(e){
   var newU = document.getElementById('un-new').value.trim();
   var confirmU = document.getElementById('un-confirm').value.trim();
   
+  // Проверяем, загрузился ли вообще скрипт капчи
+  if (typeof grecaptcha === 'undefined') {
+    toast('Помилка: Капча не завантажилася. Оновіть сторінку (F5) і спробуйте ще раз.', true);
+    return;
+  }
+
   // Получаем токен от Google reCAPTCHA
   var recaptchaToken = grecaptcha.getResponse();
   if(!recaptchaToken) {
-    toast('Будь ласка, підтвердіть, що ви не робот', true);
+    toast('Будь ласка, підтвердіть, що ви не робот (натисніть на квадратик у капчі)', true);
     return;
   }
   
