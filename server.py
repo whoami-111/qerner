@@ -406,8 +406,9 @@ def get_backup():
         d["photos"] = photos
         clients.append(d)
         
-    # 2. История
-    c.execute("SELECT * FROM interactions ORDER BY id")
+    # 2. История (добавляем order_number, чтобы потом привязать к клиенту)
+    c.execute("""SELECT i.*, c.order_number FROM interactions i 
+                 LEFT JOIN clients c ON i.client_id = c.id ORDER BY i.id""")
     interactions = [dict(r) for r in c.fetchall()]
     
     # 3. Журнал
@@ -431,14 +432,10 @@ def restore_backup():
     conn = get_db()
     c = conn.cursor()
     
-    # Восстанавливаем клиентов
     imported = 0
     updated = 0
     
-    # Сначала удаляем старых клиентов, чтобы избежать конфликтов ID при восстановлении
-    # (Это опционально, но так безопаснее для полного восстановления)
-    # c.execute("DELETE FROM clients") 
-    
+    # Восстанавливаем клиентов
     for item in data.get("clients", []):
         try:
             order = item.get("order_number")
@@ -478,14 +475,13 @@ def restore_backup():
             print(f"Ошибка импорта клиента {item.get('order_number', 'unknown')}: {e}")
             continue
 
-    # Восстанавливаем историю (удаляем старую, вставляем новую)
-    # ВАЖНО: Привязываем историю к клиентам по order_number, а не по ID, 
-    # так как ID могли измениться при новой генерации.
+    # Восстанавливаем историю
+    # ВАЖНО: Сначала удаляем старую историю, чтобы не было дублей
     if "interactions" in data:
         c.execute("DELETE FROM interactions")
         for it in data["interactions"]:
             try:
-                # Находим ID клиента по номеру заказа
+                # Находим ID клиента по номеру заказа, который мы сохранили в JSON
                 order_num = it.get("order_number")
                 cid = None
                 if order_num:
@@ -493,10 +489,6 @@ def restore_backup():
                     row = c.fetchone()
                     if row: cid = row[0]
                 
-                # Если не нашли по номеру, пробуем по старому ID (на случай если order_number нет в файле)
-                if not cid and it.get("client_id"):
-                    cid = it.get("client_id")
-
                 if cid:
                     c.execute("""INSERT INTO interactions (client_id, channel, subject, body, user_name, created_at) 
                                  VALUES (%s,%s,%s,%s,%s,%s)""", 
@@ -505,7 +497,7 @@ def restore_backup():
                 print(f"Ошибка импорта истории: {e}")
                 continue
                 
-    # Восстанавливаем журнал (удаляем старый, вставляем новый)
+    # Восстанавливаем журнал
     if "audit" in data:
         c.execute("DELETE FROM audit")
         for l in data["audit"]:
