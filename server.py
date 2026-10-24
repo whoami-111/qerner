@@ -71,7 +71,8 @@ def init_db():
         prefix VARCHAR(10) PRIMARY KEY, counter INTEGER NOT NULL DEFAULT 0
     )""")
     
-    c.execute("SELECT id FROM users WHERE username='root'")
+    # Ищем любого пользователя с ролью root, чтобы не создавать дубликат
+    c.execute("SELECT id FROM users WHERE role='root'")
     if not c.fetchone():
         c.execute("""INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at)
                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
