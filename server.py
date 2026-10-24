@@ -44,7 +44,6 @@ def init_db():
         locked INTEGER NOT NULL DEFAULT 0, created_at VARCHAR(255) NOT NULL,
         last_seen VARCHAR(255)
     )""")
-    # Добавляем колонку, если её нет (для старых баз)
     c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen VARCHAR(255)")
     
     c.execute("""CREATE TABLE IF NOT EXISTS clients (
@@ -71,7 +70,6 @@ def init_db():
         prefix VARCHAR(10) PRIMARY KEY, counter INTEGER NOT NULL DEFAULT 0
     )""")
     
-    # Ищем любого пользователя с ролью root, чтобы не создавать дубликат
     c.execute("SELECT id FROM users WHERE role='root'")
     if not c.fetchone():
         c.execute("""INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at)
@@ -166,9 +164,8 @@ def login():
         "role": user["role"], "lang": user["lang"],
         "expires": datetime.utcnow() + timedelta(hours=SESSION_TTL_HOURS),
         "login_at": datetime.utcnow(),
-        "last_ping": datetime.utcnow() # Для отслеживания активности
+        "last_ping": datetime.utcnow()
     }
-    # Сразу обновляем время при входе
     c.execute("UPDATE users SET last_seen=%s WHERE id=%s", (now_iso(), user["id"]))
     log_action("login", "user", u, u)
     conn.close()
@@ -187,7 +184,6 @@ def logout():
 @app.route("/api/ping", methods=["POST"])
 @require_auth
 def ping():
-    """Heartbeat — браузер говорит серверу 'я ещё тут'"""
     tok = request.headers.get("X-Session-Token")
     if tok in SESSIONS:
         SESSIONS[tok]["last_ping"] = datetime.utcnow()
@@ -231,7 +227,6 @@ def change_username():
     password = d.get("password") or ""
     recaptcha_token = d.get("recaptcha_token") or ""
 
-    # 1. Проверка Google reCAPTCHA (отправляем запрос в Google)
     if not recaptcha_token:
         return json_error("Підтвердіть, що ви не робот")
         
@@ -250,7 +245,6 @@ def change_username():
         print(f"Помилка перевірки капчі: {e}")
         return json_error("Помилка з'єднання з сервером капчі")
 
-    # 2. Проверка логинов и пароля
     if not new_u:
         return json_error("Введіть новий логін")
         
@@ -266,23 +260,19 @@ def change_username():
     conn = get_db()
     c = conn.cursor(row_factory=dict_row)
     
-    # Проверяем пароль
     c.execute("SELECT password_hash FROM users WHERE id=%s", (g.user["user_id"],))
     user = c.fetchone()
     if not check_password_hash(user["password_hash"], password):
         conn.close()
         return json_error("Невірний пароль")
     
-    # Проверяем, не занят ли логин
     c.execute("SELECT id FROM users WHERE username=%s", (new_u,))
     if c.fetchone():
         conn.close()
         return json_error("Цей логін вже зайнятий")
         
-    # 3. Обновляем логин
     c.execute("UPDATE users SET username=%s WHERE id=%s", (new_u, g.user["user_id"]))
     
-    # Обновляем имя в текущей сессии, чтобы не выкинуло
     tok = request.headers.get("X-Session-Token")
     if tok in SESSIONS:
         SESSIONS[tok]["username"] = new_u
@@ -332,23 +322,48 @@ def create_client():
     if not d.get("full_name") or not d.get("phone"): return json_error("ПІБ та телефон обов'язкові")
     if not d.get("source"): return json_error("Оберіть джерело")
     if not d.get("tech_type"): return json_error("Оберіть техніку")
-    order = next_order_number(prefix_for_source(d["source"]))
-    now = now_iso()
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("""INSERT INTO clients
-        (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
-        (order, d.get("full_name", ""), d.get("phone", ""), d.get("telegram", ""), d.get("viber", ""), d.get("preferred_messenger", "phone"), d.get("city", ""), d.get("district", ""), d.get("address", ""), d.get("tech_type", ""), d.get("tech_model", ""), d.get("problem", ""), d.get("company", ""), d.get("edrpou", ""), d.get("notes", ""), d.get("source", ""), d.get("status", "active"), g.user["username"], now, now))
-    cid = c.fetchone()["id"]
     
-    for photo in d.get("photos", []):
-        try:
-            c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now))
-        except Exception as e:
-            print(f"Ошибка сохранения фото: {e}")
-            continue
-            
+    conn = get_db()
+    c = conn.cursor(row_factory=dict_row)
+    
+    # Защита от дублей: ищем клиента с таким же именем и телефоном
+    c.execute("SELECT id, order_number FROM clients WHERE full_name=%s AND phone=%s", (d["full_name"], d["phone"]))
+    existing = c.fetchone()
+    
+    if existing:
+        cid = existing["id"]
+        order = existing["order_number"]
+        # Обновляем данные
+        updates = []
+        values = []
+        for f in CLIENT_FIELDS:
+            if f in d:
+                updates.append(f"{f}=%s")
+                values.append(d[f])
+        if updates:
+            updates.append("updated_at=%s")
+            values.append(now_iso())
+            values.append(cid)
+            c.execute(f"UPDATE clients SET {', '.join(updates)} WHERE id=%s", values)
+    else:
+        order = next_order_number(prefix_for_source(d["source"]))
+        now = now_iso()
+        c.execute("""INSERT INTO clients
+            (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+            (order, d.get("full_name", ""), d.get("phone", ""), d.get("telegram", ""), d.get("viber", ""), d.get("preferred_messenger", "phone"), d.get("city", ""), d.get("district", ""), d.get("address", ""), d.get("tech_type", ""), d.get("tech_model", ""), d.get("problem", ""), d.get("company", ""), d.get("edrpou", ""), d.get("notes", ""), d.get("source", ""), d.get("status", "active"), g.user["username"], now, now))
+        cid = c.fetchone()["id"]
+    
+    # Безопасное сохранение фото (в try/except)
+    if "photos" in d:
+        c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
+        for photo in d["photos"]:
+            try:
+                c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
+            except Exception as e:
+                print(f"Ошибка сохранения фото (клиент {order}): {e}")
+                continue
+                
     conn.close()
     log_action("client_create", order, f"{d.get('full_name')}", g.user["username"])
     return jsonify({"ok": True, "id": cid, "order_number": order})
@@ -396,7 +411,6 @@ def get_backup():
     conn = get_db()
     c = conn.cursor(row_factory=dict_row)
     
-    # 1. Клиенты
     c.execute("SELECT * FROM clients ORDER BY id")
     clients = []
     for r in c.fetchall():
@@ -406,12 +420,10 @@ def get_backup():
         d["photos"] = photos
         clients.append(d)
         
-    # 2. История (добавляем order_number, чтобы потом привязать к клиенту)
     c.execute("""SELECT i.*, c.order_number FROM interactions i 
                  LEFT JOIN clients c ON i.client_id = c.id ORDER BY i.id""")
     interactions = [dict(r) for r in c.fetchall()]
     
-    # 3. Журнал
     c.execute("SELECT * FROM audit ORDER BY id")
     audit = [dict(r) for r in c.fetchall()]
     
@@ -436,7 +448,6 @@ def restore_backup():
     updated = 0
     has_changes = False
     
-    # Восстанавливаем клиентов
     for item in data.get("clients", []):
         try:
             order = item.get("order_number")
@@ -468,7 +479,6 @@ def restore_backup():
                 imported += 1
                 has_changes = True
             
-            # ВАЖНО: Всегда перезаписываем фото для этого клиента (удаляем старые, вставляем новые из бэкапа)
             c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
             for photo in item.get("photos", []):
                 try:
@@ -481,7 +491,6 @@ def restore_backup():
             print(f"Ошибка импорта клиента {item.get('order_number', 'unknown')}: {e}")
             continue
 
-    # Восстанавливаем историю
     if "interactions" in data:
         c.execute("SELECT COUNT(*) FROM interactions")
         db_int_count = c.fetchone()[0]
@@ -506,7 +515,6 @@ def restore_backup():
                 print(f"Ошибка импорта истории: {e}")
                 continue
                 
-    # Восстанавливаем журнал
     if "audit" in data:
         c.execute("SELECT COUNT(*) FROM audit")
         db_audit_count = c.fetchone()[0]
