@@ -403,45 +403,49 @@ def import_clients():
     updated = 0
     
     for item in data:
-        order = item.get("order_number")
-        if not order:
-            # Если нет номера, генерируем новый
-            order = next_order_number(prefix_for_source(item.get("source", "walkin")))
+        try:
+            order = item.get("order_number")
+            if not order:
+                # Если нет номера, генерируем новый
+                order = next_order_number(prefix_for_source(item.get("source", "walkin")))
+                
+            # Проверяем, есть ли уже такой клиент
+            c.execute("SELECT id FROM clients WHERE order_number=%s", (order,))
+            existing = c.fetchone()
             
-        # Проверяем, есть ли уже такой клиент
-        c.execute("SELECT id FROM clients WHERE order_number=%s", (order,))
-        existing = c.fetchone()
-        
-        if existing:
-            # Обновляем
-            updates = []
-            values = []
-            for f in CLIENT_FIELDS:
-                if f in item:
-                    updates.append(f"{f}=%s")
-                    values.append(item[f])
-            if updates:
-                updates.append("updated_at=%s")
-                values.append(now_iso())
-                values.append(existing["id"])
-                c.execute(f"UPDATE clients SET {', '.join(updates)} WHERE id=%s", values)
-                updated += 1
-        else:
-            # Создаем
-            try:
+            if existing:
+                # Обновляем
+                updates = []
+                values = []
+                for f in CLIENT_FIELDS:
+                    if f in item:
+                        updates.append(f"{f}=%s")
+                        values.append(item[f])
+                if updates:
+                    updates.append("updated_at=%s")
+                    values.append(now_iso())
+                    values.append(existing["id"])
+                    c.execute(f"UPDATE clients SET {', '.join(updates)} WHERE id=%s", values)
+                    updated += 1
+            else:
+                # Создаем
                 c.execute("""INSERT INTO clients
                     (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
                     (order, item.get("full_name", ""), item.get("phone", ""), item.get("telegram", ""), item.get("viber", ""), item.get("preferred_messenger", "phone"), item.get("city", ""), item.get("district", ""), item.get("address", ""), item.get("tech_type", ""), item.get("tech_model", ""), item.get("problem", ""), item.get("company", ""), item.get("edrpou", ""), item.get("notes", ""), item.get("source", ""), item.get("status", "active"), item.get("created_by", g.user["username"]), item.get("created_at", now_iso()), now_iso()))
                 cid = c.fetchone()["id"]
                 imported += 1
                 
                 # Восстанавливаем фото, если они были в JSON
                 for photo in item.get("photos", []):
-                    c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
-            except Exception as e:
-                print(f"Ошибка импорта {order}: {e}")
-                continue
+                    try:
+                        c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
+                    except Exception as e:
+                        print(f"Ошибка фото при импорте {order}: {e}")
+                        continue
+        except Exception as e:
+            print(f"Ошибка импорта {item.get('order_number', 'unknown')}: {e}")
+            continue
                 
     conn.close()
     log_action("db_import", "system", f"Імпортовано: {imported}, Оновлено: {updated}", g.user["username"])
