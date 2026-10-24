@@ -542,7 +542,7 @@ var state={page:1,perPage:15,search:'',settingsTab:'profile',pendingLang:null};
 var tempPhotos=[];
 var clientsCache=[];
 var currentPhotoIndex=0,currentPhotoList=[];
-var usersStatusInterval = null;
+var _heartbeatInterval = null;
 
 // Реквизиты по умолчанию
 var COMPANY_INFO = {
@@ -576,7 +576,7 @@ function sourceCode(c){return SOURCES[c]?SOURCES[c].code:'?';}
 function techLabel(t){return TECHNOLOGIES[t]||t;}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
 function initials(n){if(!n)return '?';var p=n.trim().split(/\s+/);return((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase()||'?';}
-function fmtDate(iso){if(!iso)return '—';var d=new Date(iso);return d.toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});}
+function fmtDate(iso){if(!iso)return '—';var d=new Date(iso);return d.toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 function statusLabel(s){return{active:'Активний',lead:'Лід',vip:'VIP',inactive:'Неактивний'}[s]||s;}
 
 async function api(path,opts){
@@ -649,10 +649,20 @@ document.getElementById('login-form').addEventListener('submit',async function(e
 });
 
 function logout(){
+  if(_heartbeatInterval) clearInterval(_heartbeatInterval);
   api('/api/logout',{method:'POST'}).catch(function(){});
   localStorage.removeItem(TOKEN_KEY);token=null;currentUser=null;showLogin();
 }
 window.logout=logout;
+
+function startHeartbeat() {
+  if(_heartbeatInterval) clearInterval(_heartbeatInterval);
+  _heartbeatInterval = setInterval(function() {
+    if (token) {
+      api('/api/ping', {method:'POST'}).catch(function(){});
+    }
+  }, 30000); // каждые 30 секунд
+}
 
 async function startApp(){
   if(!currentUser){try{currentUser=await api('/api/me');}catch(e){showLogin();return;}}
@@ -667,6 +677,7 @@ async function startApp(){
   
   applyLang();
   showApp();
+  startHeartbeat(); // Запускаем пульс
   await loadClients();
   showPage('dashboard');
 }
@@ -1385,7 +1396,6 @@ async function renderUsersTab(el){
   html+='<div style="margin-bottom:14px"><button class="btn primary" onclick="openUserForm()">+ Додати адміністратора</button></div>';
   html+='<table class="users-table"><thead><tr><th>'+tr('login_user')+'</th><th>Email</th><th>Роль</th><th>Активний</th><th>Статус</th><th></th></tr></thead><tbody>';
   users.forEach(function(u){
-    // Форматируем last_seen для вывода
     var lastSeenText = '—';
     if (u.last_seen) {
         var d = new Date(u.last_seen);
@@ -1424,7 +1434,10 @@ async function updateUserStatuses() {
       if(statuses[username] && statuses[username].online) {
         var mins = statuses[username].time_online;
         var timeStr = mins > 60 ? Math.floor(mins/60)+' год '+(mins%60)+' хв' : mins+' хв';
-        td.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;color:var(--active);font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:var(--active);box-shadow:0 0 8px var(--active)"></span>В мережі ('+timeStr+')</span>';
+        td.innerHTML = '<span style="display:inline-flex;flex-direction:column;gap:2px">'+
+        '<span style="display:inline-flex;align-items:center;gap:6px;color:var(--active);font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:var(--active);box-shadow:0 0 8px var(--active)"></span>В мережі ('+timeStr+')</span>'+
+        (lastSeen !== '—' ? '<span style="font-size:10px;color:var(--text-3);padding-left:14px">Пульс: '+lastSeen+'</span>' : '')+
+        '</span>';
       } else {
         td.innerHTML = '<span style="display:inline-flex;flex-direction:column;gap:2px;color:var(--text-3)"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--text-3)"></span>Не в мережі</span>'+
         (lastSeen !== '—' ? '<span style="font-size:10px;color:var(--text-3);padding-left:14px">Був(ла): '+lastSeen+'</span>' : '')+
