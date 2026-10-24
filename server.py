@@ -447,14 +447,6 @@ def restore_backup():
             
             if existing:
                 cid = existing["id"]
-                # Проверяем, есть ли у клиента фото. Если в бэкапе они есть, а в базе нет - обновляем
-                c.execute("SELECT COUNT(*) FROM photos WHERE client_id=%s", (cid,))
-                db_photos_count = c.fetchone()[0]
-                backup_photos_count = len(item.get("photos", []))
-                
-                if backup_photos_count > 0 and db_photos_count != backup_photos_count:
-                    has_changes = True
-                
                 updates = []
                 values = []
                 for f in CLIENT_FIELDS:
@@ -467,16 +459,6 @@ def restore_backup():
                     values.append(cid)
                     c.execute(f"UPDATE clients SET {', '.join(updates)} WHERE id=%s", values)
                     updated += 1
-                    
-                # Если фото не совпадают по количеству, перезаписываем их
-                if backup_photos_count > 0 and db_photos_count != backup_photos_count:
-                    c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
-                    for photo in item.get("photos", []):
-                        try:
-                            c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
-                        except Exception as e:
-                            print(f"Ошибка фото при обновлении {order}: {e}")
-                            continue
             else:
                 c.execute("""INSERT INTO clients
                     (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
@@ -485,13 +467,16 @@ def restore_backup():
                 cid = c.fetchone()["id"]
                 imported += 1
                 has_changes = True
-                
-                for photo in item.get("photos", []):
-                    try:
-                        c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
-                    except Exception as e:
-                        print(f"Ошибка фото при импорте {order}: {e}")
-                        continue
+            
+            # ВАЖНО: Всегда перезаписываем фото для этого клиента (удаляем старые, вставляем новые из бэкапа)
+            c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
+            for photo in item.get("photos", []):
+                try:
+                    c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
+                except Exception as e:
+                    print(f"Ошибка фото при импорте {order}: {e}")
+                    continue
+                    
         except Exception as e:
             print(f"Ошибка импорта клиента {item.get('order_number', 'unknown')}: {e}")
             continue
