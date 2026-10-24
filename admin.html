@@ -254,18 +254,22 @@ tbody tr:last-child td{border-bottom:none}
 
 /* Юзеры в настройках */
 .users-header {
-  background: var(--surface-2);
-  border-left: 3px solid var(--info);
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
+  background: rgba(88, 166, 255, 0.05); /* Легкий синий оттенок */
+  border: 1px solid rgba(88, 166, 255, 0.2);
+  padding: 14px 16px;
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   margin-bottom: 20px;
-  font-size: 13.5px;
-  color: var(--text);
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.4;
 }
-.users-header-icon { font-size: 18px; }
+.users-header-icon { 
+  font-size: 20px; 
+  filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.5));
+}
 .users-table {
   width: 100%;
   border-collapse: collapse;
