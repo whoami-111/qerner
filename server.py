@@ -8,9 +8,17 @@ from flask import Flask, request, jsonify, send_from_directory, g
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 
+# --- Для проверки Google reCAPTCHA ---
+import json
+import urllib.request
+import urllib.parse
+
 # --- Настройки ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URL = os.environ.get("DATABASE_URL")
+
+# Твой секретный ключ от Google reCAPTCHA
+RECAPTCHA_SECRET_KEY = "6LeZ-P4tAAAAAKI1ecgW9taevTP1Z6vSsAduBBzs"
 
 app = Flask(__name__, static_folder=None)
 CORS(app, supports_credentials=True)
@@ -220,12 +228,28 @@ def change_username():
     new_u = (d.get("new_username") or "").strip()
     new_u_confirm = (d.get("new_username_confirm") or "").strip()
     password = d.get("password") or ""
-    captcha_passed = d.get("captcha_passed") or False
+    recaptcha_token = d.get("recaptcha_token") or ""
 
-    # 1. Проверка капчи (фронтенд присылает True, если юзер выбрал правильные картинки)
-    if not captcha_passed:
-        return json_error("Помилка капчі. Спробуйте ще раз.")
+    # 1. Проверка Google reCAPTCHA (отправляем запрос в Google)
+    if not recaptcha_token:
+        return json_error("Підтвердіть, що ви не робот")
+        
+    req_data = urllib.parse.urlencode({
+        'secret': RECAPTCHA_SECRET_KEY,
+        'response': recaptcha_token
+    }).encode('utf-8')
+    
+    req = urllib.request.Request("https://www.google.com/recaptcha/api/siteverify", data=req_data)
+    try:
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            if not result.get("success"):
+                return json_error("Помилка капчі Google. Оновіть сторінку і спробуйте ще раз.")
+    except Exception as e:
+        print(f"Помилка перевірки капчі: {e}")
+        return json_error("Помилка з'єднання з сервером капчі")
 
+    # 2. Проверка логинов и пароля
     if not new_u:
         return json_error("Введіть новий логін")
         
@@ -241,23 +265,23 @@ def change_username():
     conn = get_db()
     c = conn.cursor(row_factory=dict_row)
     
-    # 2. Проверяем пароль текущего пользователя
+    # Проверяем пароль
     c.execute("SELECT password_hash FROM users WHERE id=%s", (g.user["user_id"],))
     user = c.fetchone()
     if not check_password_hash(user["password_hash"], password):
         conn.close()
         return json_error("Невірний пароль")
     
-    # 3. Проверяем, не занят новый логин
+    # Проверяем, не занят ли логин
     c.execute("SELECT id FROM users WHERE username=%s", (new_u,))
     if c.fetchone():
         conn.close()
         return json_error("Цей логін вже зайнятий")
         
-    # 4. Обновляем логин
+    # 3. Обновляем логин
     c.execute("UPDATE users SET username=%s WHERE id=%s", (new_u, g.user["user_id"]))
     
-    # Обновляем имя в текущей сессии
+    # Обновляем имя в текущей сессии, чтобы не выкинуло
     tok = request.headers.get("X-Session-Token")
     if tok in SESSIONS:
         SESSIONS[tok]["username"] = new_u
