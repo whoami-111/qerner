@@ -21,11 +21,26 @@
   --mono:'SF Mono','JetBrains Mono','Courier New',monospace;
   --shadow:0 1px 3px rgba(0,0,0,.5);--shadow-lg:0 12px 32px rgba(0,0,0,.6);
 }
+/* НОВЫЕ ТЕМЫ */
 [data-theme="light"]{
   --bg:#fafafa;--bg-elev:#f5f5f5;--surface:#fff;--surface-2:#f7f7f7;--surface-3:#efefef;
   --border:#e5e5e5;--border-soft:#eee;--border-strong:#d4d4d4;
   --text:#1a1a1a;--text-2:#666;--text-3:#999;--white:#000;
   --shadow:0 1px 3px rgba(0,0,0,.06);--shadow-lg:0 12px 32px rgba(0,0,0,.1);
+}
+[data-theme="ocean"]{
+  --bg:#0f172a;--bg-elev:#1e293b;--surface:#334155;--surface-2:#475569;--surface-3:#64748b;
+  --border:#334155;--border-soft:#1e293b;--border-strong:#475569;
+  --text:#e2e8f0;--text-2:#94a3b8;--text-3:#64748b;--white:#f8fafc;
+  --active:#22c55e;--lead:#eab308;--inactive:#64748b;--vip:#a855f7;--danger:#ef4444;--info:#3b82f6;
+  --shadow:0 1px 3px rgba(0,0,0,.5);--shadow-lg:0 12px 32px rgba(0,0,0,.6);
+}
+[data-theme="forest"]{
+  --bg:#061a14;--bg-elev:#0a2e24;--surface:#0e3d30;--surface-2:#145442;--surface-3:#1a6b55;
+  --border:#0e3d30;--border-soft:#0a2e24;--border-strong:#145442;
+  --text:#dcfce7;--text-2:#86efac;--text-3:#4ade80;--white:#f0fdf4;
+  --active:#22c55e;--lead:#eab308;--inactive:#4ade80;--vip:#a855f7;--danger:#ef4444;--info:#06b6d4;
+  --shadow:0 1px 3px rgba(0,0,0,.5);--shadow-lg:0 12px 32px rgba(0,0,0,.6);
 }
 html,body{height:100%}
 body{font-family:var(--font);font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow:hidden}
@@ -237,8 +252,23 @@ tbody tr:last-child td{border-bottom:none}
 .settings-row-label{flex:1;min-width:200px}
 .settings-row-label .name{font-size:14px;color:var(--text);font-weight:500}
 .settings-row-label .hint{font-size:12px;color:var(--text-3);margin-top:3px}
-.settings-select{padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;color:var(--text);min-width:150px}
-.settings-input{padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;color:var(--text);width:260px}
+
+/* КРАСИВЫЕ ТЕМЫ */
+.theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 10px; }
+.theme-card { border: 2px solid var(--border); border-radius: var(--radius); padding: 8px; cursor: pointer; transition: all 0.2s; text-align: center; }
+.theme-card:hover { border-color: var(--text-2); }
+.theme-card.active { border-color: var(--info); box-shadow: 0 0 0 1px var(--info); }
+.theme-preview { width: 100%; height: 48px; border-radius: var(--radius-sm); margin-bottom: 8px; display: flex; overflow: hidden; border: 1px solid rgba(0,0,0,0.2); }
+.theme-preview .p-side { width: 30%; height: 100%; }
+.theme-preview .p-main { width: 70%; height: 100%; display: flex; flex-direction: column; }
+.theme-preview .p-head { height: 30%; width: 100%; }
+.theme-preview .p-body { height: 70%; width: 100%; }
+.theme-name { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; }
+/* Цвета превью */
+.t-dark .p-side { background: #111; } .t-dark .p-head { background: #161616; } .t-dark .p-body { background: #0d0d0d; }
+.t-light .p-side { background: #f5f5f5; } .t-light .p-head { background: #fff; } .t-light .p-body { background: #fafafa; }
+.t-ocean .p-side { background: #1e293b; } .t-ocean .p-head { background: #334155; } .t-ocean .p-body { background: #0f172a; }
+.t-forest .p-side { background: #0a2e24; } .t-forest .p-head { background: #0e3d30; } .t-forest .p-body { background: #061a14; }
 
 .role-badge{display:inline-flex;align-items:center;padding:2px 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;font-size:10.5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--text-2);font-weight:600}
 .role-badge.root{color:#fbbf24;border-color:rgba(251,191,36,.4)}
@@ -356,6 +386,7 @@ tbody tr:last-child td{border-bottom:none}
     width: 100%;
     justify-content: space-between;
   }
+  .theme-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Toast */
@@ -571,6 +602,7 @@ tbody tr:last-child td{border-bottom:none}
 </div>
 
 <input type="file" id="photo-input" accept="image/*" multiple style="display:none">
+<input type="file" id="backup-input" accept=".json" style="display:none" onchange="uploadBackup(event)">
 <div id="toast"></div>
 
 <script>
@@ -712,6 +744,7 @@ async function addInteraction(e,cid){ e.preventDefault(); var channel=document.g
 function generateAct(id) { var c = clientsCache.filter(function(x){return x.id===id;})[0]; if (!c) return; var { jsPDF } = window.jspdf; var doc = new jsPDF('p', 'mm', 'a4'); var marginX = 15; var marginY = 20; var width = 180; doc.setFont('Helvetica', 'bold'); doc.setFontSize(16); doc.text('АКТ ЗАБОРУ ТЕХНІКИ', 105, marginY, { align: 'center' }); doc.setFontSize(12); doc.text('№ ' + c.order_number + ' від ' + new Date(c.created_at).toLocaleDateString('uk-UA'), 105, marginY + 8, { align: 'center' }); doc.setFontSize(10); doc.setFont('Helvetica', 'normal'); doc.setFont('Helvetica', 'bold'); doc.text('1. СТОРОНИ', marginX, marginY + 20); doc.setFont('Helvetica', 'normal'); var text1 = 'Виконавець: ' + COMPANY_INFO.name + '\n' + 'ЄДРПОУ/ІПН: ' + COMPANY_INFO.unp + '\n' + 'Адреса: ' + COMPANY_INFO.address + '\n\n' + 'Замовник: ' + (c.full_name || '—') + '\n' + 'Телефон: ' + (c.phone || '—') + '\n' + 'Адреса забору: ' + [c.city, c.district, c.address].filter(Boolean).join(', '); doc.text(text1, marginX, marginY + 26); var y2 = marginY + 65; doc.setFont('Helvetica', 'bold'); doc.text('2. ТЕХНІКА', marginX, y2); doc.setFont('Helvetica', 'normal'); var text2 = 'Найменування: ' + techLabel(c.tech_type) + '\n' + 'Виробник / модель: ' + (c.tech_model || 'Не вказано') + '\n' + 'Серійний номер: Не вказано\n' + 'Комплектація: Не вказано\n' + 'Зовнішній стан: Не вказано\n' + 'Заявлена несправність: ' + (c.problem || '—'); doc.text(text2, marginX, y2 + 6); var y3 = y2 + 40; doc.setFont('Helvetica', 'bold'); doc.text('3. ДІАГНОСТИКА', marginX, y3); doc.setFont('Helvetica', 'normal'); var text3 = 'Замовник доручає Виконавцю провести діагностику техніки: встановити причину\n' + 'несправності, визначити перелік необхідних робіт, запасних частин та вартість\n' + 'ремонту. Ремонт виконується лише після попереднього погодження з Замовником.'; doc.text(text3, marginX, y3 + 6); var y4 = y3 + 25; if (y4 > 270) { doc.addPage(); y4 = marginY; } doc.setFont('Helvetica', 'bold'); doc.text('4. УМОВИ', marginX, y4); doc.setFont('Helvetica', 'normal'); var terms = [ '1. Акт складено відповідно до Цивільного кодексу України (глава 61, § 2 «Побутовий підряд»).', '2. Техніку прийнято без розбирання. Виконавець не відповідає за приховані дефекти.', '3. Якщо Замовник не забирає техніку протягом 40 днів, він вважається таким, що відмовився від права власності (ст. 347 ЦК України).', '4. Замовник надає згоду на обробку персональних даних з метою виконання цього замовлення.' ]; var text4 = ''; terms.forEach(function(t) { text4 += t + '\n\n'; }); doc.setFontSize(9); doc.text(text4, marginX, y4 + 6, { maxWidth: width }); var y5 = y4 + 50; if (y5 > 250) { doc.addPage(); y5 = marginY; } doc.setFontSize(10); doc.setFont('Helvetica', 'bold'); doc.text('5. ПІДПИСИ СТОРІН', marginX, y5); doc.setFont('Helvetica', 'normal'); doc.text('Виконавець:', marginX, y5 + 10); doc.line(marginX + 25, y5 + 15, marginX + 80, y5 + 15); doc.setFontSize(8); doc.text('(Підпис)', marginX + 40, y5 + 18); doc.setFontSize(10); doc.text('Замовник:', 110, y5 + 10); doc.line(110 + 25, y5 + 15, 110 + 80, y5 + 15); doc.setFontSize(8); doc.text('(Підпис)', 110 + 40, y5 + 18); doc.setFontSize(8); doc.setTextColor(150); doc.text('Документ сформовано в системі Qerner. ' + new Date().toLocaleString('uk-UA'), marginX, 285); doc.save('Акт_забору_' + (c.order_number || 'без_номера') + '.pdf'); toast('Акт успішно згенеровано!'); } window.generateAct = generateAct;
 
 function backupDB() { var dataStr = JSON.stringify(clientsCache, null, 2); var blob = new Blob([dataStr], {type: "application/json"}); var url = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = url; a.download = 'qerner_backup_' + new Date().toISOString().slice(0,10) + '.json'; a.click(); URL.revokeObjectURL(url); toast('Резервна копія скачана!'); } window.backupDB = backupDB;
+function uploadBackup(e) { var file = e.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = async function(ev) { try { var data = JSON.parse(ev.target.result); if(!Array.isArray(data)) throw new Error('Невірний формат'); if(!confirm('Увага! Це завантажить дані з файлу в базу. Існуючі записи з тими ж номерами будуть оновлені. Продовжити?')) return; var res = await api('/api/clients/import', {method:'POST', body:data}); toast('Імпортовано: ' + res.imported + ', Оновлено: ' + res.updated); await loadClients(); renderClients(); renderDashboard(); } catch(err) { toast('Помилка імпорту: ' + err.message, true); } }; reader.readAsText(file); e.target.value = ''; } window.uploadBackup = uploadBackup;
 
 function renderAnalytics(){ var clients=clientsCache; var srcStats=Object.keys(SOURCES).map(function(k){return{key:k,count:clients.filter(function(c){return c.source===k;}).length};}); var maxSrc=Math.max.apply(null,srcStats.map(function(x){return x.count;}).concat([1])); var techStats=Object.keys(TECHNOLOGIES).map(function(k){return{key:k,count:clients.filter(function(c){return c.tech_type===k;}).length};}); var maxTech=Math.max.apply(null,techStats.map(function(x){return x.count;}).concat([1])); var cities={};clients.forEach(function(c){if(c.city)cities[c.city]=(cities[c.city]||0)+1;}); var topCities=Object.keys(cities).map(function(k){return{name:k,count:cities[k]};}).sort(function(a,b){return b.count-a.count;}).slice(0,8); var html='<div class="grid-2"><div class="panel"><div class="panel-head"><div class="panel-title">'+tr('th_source')+'</div></div><div class="panel-body">'; srcStats.forEach(function(s){html+='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>'+sourceLabel(s.key)+' ('+sourceCode(s.key)+')</span><span style="font-family:var(--mono)">'+s.count+'</span></div><div style="height:3px;background:var(--surface-3);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+Math.round(s.count/maxSrc*100)+'%;background:var(--text-2)"></div></div></div>';}); html+='</div></div><div class="panel"><div class="panel-head"><div class="panel-title">'+tr('th_tech')+'</div></div><div class="panel-body">'; techStats.forEach(function(s){html+='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>'+techLabel(s.key)+'</span><span style="font-family:var(--mono)">'+s.count+'</span></div><div style="height:3px;background:var(--surface-3);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+Math.round(s.count/maxTech*100)+'%;background:var(--info)"></div></div></div>';}); html+='</div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">'+tr('form_city')+'</div></div><div class="panel-body">'; if(!topCities.length)html+=emptyState('◌','Немає даних',''); else topCities.forEach(function(c){html+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:13px"><span>'+esc(c.name)+'</span><span style="font-family:var(--mono)">'+c.count+'</span></div>';}); html+='</div></div>'; document.getElementById('analytics-view').innerHTML=html; }
 
@@ -729,7 +762,20 @@ var SETTINGS_TABS=[ {id:'profile',label:'settings_profile',icon:'👤'}, {id:'se
 function renderSettings(){ var nav=document.getElementById('settings-nav'); var html=''; SETTINGS_TABS.forEach(function(tab){ if(tab.rootOnly&&currentUser.role!=='root')return; var active=state.settingsTab===tab.id?' active':''; html+='<div class="settings-nav-item'+active+'" onclick="setSettingsTab(\''+tab.id+'\')">'+tab.icon+' '+tr(tab.label)+'</div>'; }); nav.innerHTML=html; renderSettingsContent(); }
 function setSettingsTab(id){state.settingsTab=id;renderSettings();} window.setSettingsTab=setSettingsTab;
 
-function renderSettingsContent(){ var el=document.getElementById('settings-content'); var tab=state.settingsTab; if(tab==='profile'){ el.innerHTML='<h3>'+tr('settings_profile')+'</h3>'+ '<div class="settings-row"><div class="settings-row-label"><div class="name">'+tr('login_user')+'</div><div class="hint">Ваш логін в системі</div></div><div style="display:flex; align-items:center; gap:10px"><span class="role-badge">'+esc(currentUser.username)+'</span><button class="btn sm" onclick="openChangeUsername()">Змінити</button></div></div>'+ '<div class="settings-row"><div class="settings-row-label"><div class="name">Email</div><div class="hint">Контактна пошта</div></div><div><input class="settings-input" value="'+esc(currentUser.email||'')+'" disabled></div></div>'+ '<div class="settings-row"><div class="settings-row-label"><div class="name">Роль</div><div class="hint">Рівень доступу</div></div><div><span class="role-badge '+currentUser.role+'">'+currentUser.role+'</span></div></div>'; } else if(tab==='security'){ el.innerHTML='<h3>'+tr('settings_security')+'</h3>'+ '<div class="settings-row"><div class="settings-row-label"><div class="name">Змінити пароль</div><div class="hint">Мінімум 8 символів</div></div><div><button class="btn" onclick="openChangePassword()">Змінити</button></div></div>'+ '<div class="settings-row"><div class="settings-row-label"><div class="name">Резервна копія</div><div class="hint">Зберегти всі дані на комп\'ютер</div></div><div><button class="btn" onclick="backupDB()">Скачати базу (JSON)</button></div></div>'+ '<div class="settings-row"><div class="settings-row-label"><div class="name">Тема інтерфейсу</div><div class="hint">Темна або світла</div></div><div><select class="settings-select" onchange="toggleTheme(this.value)"><option value="dark">Темна</option><option value="light">Світла</option></select></div></div>'; } else if(tab==='language'){ var active=state.pendingLang||currentUser.lang||'uk'; var langs=[ {code:'uk',flag:'🇺🇦',name:'Українська'}, {code:'ru',flag:'🇷🇺',name:'Русский'}, {code:'en',flag:'🇬🇧',name:'English'} ]; var html='<h3>'+tr('settings_lang')+'</h3><div style="font-size:13px;color:var(--text-2);margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">Змінюється тільки для вашого облікового запису.</div>'; langs.forEach(function(l){html+='<div class="lang-opt '+(active===l.code?'selected':'')+'" onclick="selectLang(\''+l.code+'\')"><div class="lang-opt-flag">'+l.flag+'</div><div class="lang-opt-info"><div class="lang-opt-name">'+l.name+'</div></div><div class="lang-opt-check">'+(active===l.code?'✓':'')+'</div></div>';}); html+='<div class="lang-actions"><button class="btn" onclick="cancelLang()">'+tr('form_cancel')+'</button><button class="btn primary" onclick="applyLangBtn()" '+(active===currentUser.lang?'disabled':'')+'>Застосувати</button></div>'; el.innerHTML=html; } else if(tab==='users'){ renderUsersTab(el); } }
+function renderSettingsContent(){ var el=document.getElementById('settings-content'); var tab=state.settingsTab; if(tab==='profile'){ el.innerHTML='<h3>'+tr('settings_profile')+'</h3>'+ '<div class="settings-row"><div class="settings-row-label"><div class="name">'+tr('login_user')+'</div><div class="hint">Ваш логін в системі</div></div><div style="display:flex; align-items:center; gap:10px"><span class="role-badge">'+esc(currentUser.username)+'</span><button class="btn sm" onclick="openChangeUsername()">Змінити</button></div></div>'+ '<div class="settings-row"><div class="settings-row-label"><div class="name">Email</div><div class="hint">Контактна пошта</div></div><div><input class="settings-input" value="'+esc(currentUser.email||'')+'" disabled></div></div>'+ '<div class="settings-row"><div class="settings-row-label"><div class="name">Роль</div><div class="hint">Рівень доступу</div></div><div><span class="role-badge '+currentUser.role+'">'+currentUser.role+'</span></div></div>'; } else if(tab==='security'){ 
+  var curTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  el.innerHTML='<h3>'+tr('settings_security')+'</h3>'+ 
+    '<div class="settings-row"><div class="settings-row-label"><div class="name">Змінити пароль</div><div class="hint">Мінімум 8 символів</div></div><div><button class="btn" onclick="openChangePassword()">Змінити</button></div></div>'+ 
+    '<div class="settings-row"><div class="settings-row-label"><div class="name">Резервне копіювання</div><div class="hint">Збережіть базу даних або завантажте її назад</div></div><div style="display:flex; gap:8px; flex-wrap:wrap;"><button class="btn" onclick="backupDB()">↓ Скачати (JSON)</button><button class="btn primary" onclick="document.getElementById(\'backup-input\').click()">↑ Завантажити</button></div></div>'+ 
+    '<div class="settings-row" style="flex-direction:column; align-items:stretch; gap:12px;"><div class="settings-row-label"><div class="name">Тема інтерфейсу</div><div class="hint">Оберіть зручне оформлення</div></div>'+
+      '<div class="theme-grid">'+
+        '<div class="theme-card '+(curTheme==='dark'?'active':'')+'" onclick="setTheme(\'dark\')"><div class="theme-preview t-dark"><div class="p-side"></div><div class="p-main"><div class="p-head"></div><div class="p-body"></div></div></div><div class="theme-name">Темна</div></div>'+
+        '<div class="theme-card '+(curTheme==='light'?'active':'')+'" onclick="setTheme(\'light\')"><div class="theme-preview t-light"><div class="p-side"></div><div class="p-main"><div class="p-head"></div><div class="p-body"></div></div></div><div class="theme-name">Світла</div></div>'+
+        '<div class="theme-card '+(curTheme==='ocean'?'active':'')+'" onclick="setTheme(\'ocean\')"><div class="theme-preview t-ocean"><div class="p-side"></div><div class="p-main"><div class="p-head"></div><div class="p-body"></div></div></div><div class="theme-name">Океан</div></div>'+
+        '<div class="theme-card '+(curTheme==='forest'?'active':'')+'" onclick="setTheme(\'forest\')"><div class="theme-preview t-forest"><div class="p-side"></div><div class="p-main"><div class="p-head"></div><div class="p-body"></div></div></div><div class="theme-name">Ліс</div></div>'+
+      '</div>'+
+    '</div>'; 
+} else if(tab==='language'){ var active=state.pendingLang||currentUser.lang||'uk'; var langs=[ {code:'uk',flag:'🇺🇦',name:'Українська'}, {code:'ru',flag:'🇷🇺',name:'Русский'}, {code:'en',flag:'🇬🇧',name:'English'} ]; var html='<h3>'+tr('settings_lang')+'</h3><div style="font-size:13px;color:var(--text-2);margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">Змінюється тільки для вашого облікового запису.</div>'; langs.forEach(function(l){html+='<div class="lang-opt '+(active===l.code?'selected':'')+'" onclick="selectLang(\''+l.code+'\')"><div class="lang-opt-flag">'+l.flag+'</div><div class="lang-opt-info"><div class="lang-opt-name">'+l.name+'</div></div><div class="lang-opt-check">'+(active===l.code?'✓':'')+'</div></div>';}); html+='<div class="lang-actions"><button class="btn" onclick="cancelLang()">'+tr('form_cancel')+'</button><button class="btn primary" onclick="applyLangBtn()" '+(active===currentUser.lang?'disabled':'')+'>Застосувати</button></div>'; el.innerHTML=html; } else if(tab==='users'){ renderUsersTab(el); } }
 function selectLang(code){state.pendingLang=code;renderSettingsContent();} window.selectLang=selectLang;
 function cancelLang(){state.pendingLang=null;renderSettingsContent();} window.cancelLang=cancelLang;
 async function applyLangBtn(){ if(!state.pendingLang||state.pendingLang===currentUser.lang){toast('Мова не змінена',true);return;} try{ await api('/api/me/lang',{method:'POST',body:{lang:state.pendingLang}}); currentUser.lang=state.pendingLang; state.pendingLang=null; applyLang(); renderSettingsContent(); renderDashboard(); toast('Мову збережено'); }catch(e){toast(e.message,true);} } window.applyLangBtn=applyLangBtn;
@@ -750,26 +796,13 @@ function openChangeUsername(){
       '<div class="form-row full"><div class="form-group"><label>Новий логін</label><input class="form-input" id="un-new" required></div></div>'+
       '<div class="form-row full"><div class="form-group"><label>Повторіть новий логін</label><input class="form-input" id="un-confirm" required></div></div>'+
       
-      // ВСТАВЬ СЮДА СВОЙ НОВЫЙ SITE KEY ИЗ GOOGLE RECAPTCHA (v2 "Я не робот")
       '<div class="form-row full" style="margin-top:15px; display:flex; justify-content:center;">'+
-        '<div id="recaptcha-container"></div>'+
+        '<div class="g-recaptcha" data-sitekey="6LdrF_8tAAAAAFWQu3PA6_2Ae8KRF9wft7V9eL9Q"></div>'+
       '</div>'+
     '</div>'+
     '<div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">'+tr('form_cancel')+'</button><button type="submit" class="btn primary">Підтвердити</button></div></form>';
-  
   document.getElementById('modal-content').innerHTML=html;
   document.getElementById('modal').classList.add('open');
-
-  // Принудительно рисуем капчу, когда модалка уже открыта
-  setTimeout(function() {
-    if (typeof grecaptcha !== 'undefined' && document.getElementById('recaptcha-container')) {
-      grecaptcha.render('recaptcha-container', {
-        'sitekey': '6LdrF_8tAAAAAFWQu3PA6_2Ae8KRF9wft7V9eL9Q'
-      });
-    } else {
-      console.error("Google reCAPTCHA script not loaded");
-    }
-  }, 100);
 }
 window.openChangeUsername=openChangeUsername;
 
@@ -780,18 +813,9 @@ async function saveUsername(e){
   var newU = document.getElementById('un-new').value.trim();
   var confirmU = document.getElementById('un-confirm').value.trim();
   
-  // Проверяем, загрузился ли вообще скрипт капчи
-  if (typeof grecaptcha === 'undefined') {
-    toast('Помилка: Капча не завантажилася. Оновіть сторінку (F5) і спробуйте ще раз.', true);
-    return;
-  }
-
-  // Получаем токен от Google reCAPTCHA
+  if (typeof grecaptcha === 'undefined') { toast('Помилка: Капча не завантажилася. Оновіть сторінку (F5) і спробуйте ще раз.', true); return; }
   var recaptchaToken = grecaptcha.getResponse();
-  if(!recaptchaToken) {
-    toast('Будь ласка, підтвердіть, що ви не робот (натисніть на квадратик у капчі)', true);
-    return;
-  }
+  if(!recaptchaToken) { toast('Будь ласка, підтвердіть, що ви не робот (натисніть на квадратик у капчі)', true); return; }
   
   try{
     var res = await api('/api/me/username', {
@@ -804,29 +828,16 @@ async function saveUsername(e){
         recaptcha_token: recaptchaToken
       }
     });
-    
-    // Обновляем данные на лету (без дублирования!)
     currentUser.username = res.new_username;
-    
     document.getElementById('current-user').textContent = res.new_username;
     document.getElementById('user-avatar').textContent = res.new_username[0].toUpperCase();
     document.getElementById('dd-name').textContent = res.new_username;
-    
     toast('Логін успішно змінено!');
     closeModal();
-    
-    // Перерисовываем текущую вкладку настроек (профиль), 
-    // чтобы имя обновилось в самой карточке "Профіль".
     renderSettingsContent();
-    
-    // Если открыта вкладка "Користувачі", обновляем её
-    if(state.settingsTab === 'users') {
-        renderUsersTab(document.getElementById('settings-content'));
-    }
-    
+    if(state.settingsTab === 'users') { renderUsersTab(document.getElementById('settings-content')); }
   }catch(err){
     toast(err.message, true);
-    // Если ошибка, сбрасываем капчу, чтобы можно было попробовать снова
     if(window.grecaptcha) grecaptcha.reset();
   }
   return false;
@@ -838,7 +849,13 @@ async function saveUser(e){ e.preventDefault(); var data={username:document.getE
 async function deleteUser(id){ if(!confirm('Видалити?'))return; try{await api('/api/users/'+id,{method:'DELETE'});toast('Видалено');renderSettingsContent();} catch(e){toast(e.message,true);} } window.deleteUser=deleteUser;
 
 function exportExcel(){ if(!currentUser||currentUser.role!=='root'){toast('Тільки root',true);return;} if(!clientsCache.length){toast('Немає даних',true);return;} var headers = ['№', 'Порядковий', 'ПІБ', 'Джерело', 'Код', 'Телефон', 'Telegram', 'Viber', 'Місто', 'Район', 'Адреса', 'Техніка', 'Модель', 'Проблема', 'Статус', 'Заніс', 'Фото', 'Створено']; var rows = clientsCache.slice().sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);}).map(function(c,i){ return [ c.order_number||'', i+1, c.full_name||'', sourceLabel(c.source), sourceCode(c.source), c.phone||'', c.telegram||'', c.viber||'', c.city||'', c.district||'', c.address||'', c.tech_type?techLabel(c.tech_type):'', c.tech_model||'', (c.problem||'').replace(/[\r\n]+/g,' '), statusLabel(c.status), c.created_by||'', (c.photos||[]).length, c.created_at?new Date(c.created_at).toLocaleString('uk-UA'):'' ]; }); var html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>'; html += 'table { border-collapse: collapse; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; }'; html += 'th { background-color: #1a1a1a; color: #ffffff; padding: 10px; border: 1px solid #333; text-align: left; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }'; html += 'td { padding: 8px 10px; border: 1px solid #cccccc; color: #333333; }'; html += 'tr:nth-child(even) td { background-color: #f9f9f9; }'; html += 'tr:hover td { background-color: #f1f5f9; }'; html += '.mono { font-family: Consolas, monospace; color: #0066cc; }'; html += '.status-active { color: #2e7d32; font-weight: bold; }'; html += '.status-vip { color: #7b1fa2; font-weight: bold; }'; html += '.status-lead { color: #ef6c00; font-weight: bold; }'; html += '.status-inactive { color: #757575; }'; html += '</style></head><body>'; html += '<table><thead><tr>'; headers.forEach(function(h) { html += '<th>' + h + '</th>'; }); html += '</tr></thead><tbody>'; rows.forEach(function(row) { html += '<tr>'; row.forEach(function(cell, index) { var cls = ''; if (index === 0 || index === 5) cls = 'class="mono"'; if (index === 14) { var st = String(cell).toLowerCase(); if (st === 'активний') cls = 'class="status-active"'; else if (st === 'vip') cls = 'class="status-vip"'; else if (st === 'лід') cls = 'class="status-lead"'; else if (st === 'неактивний') cls = 'class="status-inactive"'; } var val = cell; if (index === 5 || index === 7) val = '="' + cell + '"'; html += '<td ' + cls + '>' + val + '</td>'; }); html += '</tr>'; }); html += '</tbody></table></body></html>'; var blob = new Blob([html], {type: 'application/vnd.ms-excel'}); var url = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = url; a.download = 'qerner_clients_' + new Date().toISOString().slice(0, 10) + '.xls'; a.click(); URL.revokeObjectURL(url); toast('Експортовано в Excel'); } window.exportExcel=exportExcel;
-function toggleTheme(val){ var next = val || (document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'); document.documentElement.setAttribute('data-theme',next); localStorage.setItem('qerner_theme',next); } window.toggleTheme=toggleTheme;
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('qerner_theme', theme);
+  renderSettingsContent();
+}
+window.setTheme = setTheme;
 
 async function init(){ var th=localStorage.getItem('qerner_theme')||'dark'; document.documentElement.setAttribute('data-theme',th); API_BASE = window.location.origin; localStorage.setItem(URL_KEY, API_BASE); try{ var res=await fetch(API_BASE+'/api/health'); if(!res.ok)throw new Error(); document.getElementById('setup-screen').style.display='none'; if(token){currentUser=await api('/api/me');startApp();return;} showLogin(); }catch(e){document.getElementById('setup-screen').style.display='flex';} }
 init();
