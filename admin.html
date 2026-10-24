@@ -7,6 +7,8 @@
 <title>Qerner Admin</title>
 <!-- Подключаем jsPDF для генерации документов -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Подключаем Google reCAPTCHA -->
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -37,14 +39,6 @@ a{color:inherit;text-decoration:none}
 .form-input, input, select, textarea {width:100%;background:var(--bg-elev) !important;border:1px solid var(--border) !important;color:var(--text) !important;padding:10px 12px;border-radius:var(--radius-sm);outline:none;font-size:14px;-webkit-appearance:none}
 .form-input:focus, input:focus, select:focus, textarea:focus {border-color:var(--border-strong) !important;background:var(--surface-2) !important}
 select {background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E") !important;background-repeat:no-repeat !important;background-position:right 12px top 50% !important;background-size:10px auto !important;padding-right:30px !important}
-
-/* Капча */
-.captcha-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-.captcha-item { position: relative; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s; }
-.captcha-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.captcha-item.selected { border-color: var(--active); }
-.captcha-item.selected::after { content: '✓'; position: absolute; top: 4px; right: 4px; background: var(--active); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-.captcha-target { font-weight: 600; color: var(--info); text-transform: uppercase; }
 
 /* SETUP / LOGIN */
 #setup-screen, #login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:100;padding:16px}
@@ -412,7 +406,6 @@ tbody tr:last-child td{border-bottom:none}
   .messenger-grid{grid-template-columns:1fr}
   .photo-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
   #toast{left:12px;right:12px;bottom:16px;max-width:none}
-  .captcha-grid { gap: 4px; }
 }
 </style>
 </head>
@@ -1596,33 +1589,15 @@ window.savePassword=savePassword;
 function openChangeUsername(){
   document.getElementById('modal-title').textContent='Змінити логін';
   
-  // Генерируем случайное задание для капчи
-  var targets = ['світлофор', 'пожежний гідрант', 'лестница', 'велосипед', 'машина', 'мотоцикл', 'зебра'];
-  var target = targets[Math.floor(Math.random() * targets.length)];
-  
-  // Генерируем 9 картинок (1 правильная, 8 случайных)
-  var images = [];
-  for(var i=0; i<9; i++) {
-    var tag = (i === 0) ? target : targets[Math.floor(Math.random() * targets.length)];
-    images.push(`https://loremflickr.com/150/150/${encodeURIComponent(tag)}?lock=${Math.floor(Math.random()*1000)}`);
-  }
-  // Перемешиваем
-  images.sort(() => Math.random() - 0.5);
-
-  var html='<form onsubmit="saveUsername(event, \''+target+'\')">'+
+  var html='<form onsubmit="saveUsername(event)">'+
     '<div class="modal-body">'+
       '<div class="form-row full"><div class="form-group"><label>Поточний логін</label><input class="form-input" id="un-current" required></div></div>'+
       '<div class="form-row full"><div class="form-group"><label>Поточний пароль</label><input class="form-input" type="password" id="un-password" required></div></div>'+
       '<div class="form-row full"><div class="form-group"><label>Новий логін</label><input class="form-input" id="un-new" required></div></div>'+
       '<div class="form-row full"><div class="form-group"><label>Повторіть новий логін</label><input class="form-input" id="un-confirm" required></div></div>'+
       
-      '<div class="form-row full" style="margin-top:10px; background:var(--surface-2); padding:12px; border-radius:var(--radius-sm); border:1px dashed var(--border-strong)">'+
-        '<div class="form-group">'+
-          '<label>Капча: Виберіть всі зображення з темою <span class="captcha-target">'+target+'</span></label>'+
-          '<div class="captcha-grid" id="captcha-grid">'+
-            images.map(function(img, idx){ return '<div class="captcha-item" onclick="this.classList.toggle(\'selected\')"><img src="'+img+'"></div>'; }).join('')+
-          '</div>'+
-        '</div>'+
+      '<div class="form-row full" style="margin-top:15px; display:flex; justify-content:center;">'+
+        '<div class="g-recaptcha" data-sitekey="6LeZ-P4tAAAAAACl4g-Du2vzfrD7LoZrr-k-rJpUk"></div>'+
       '</div>'+
     '</div>'+
     '<div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">'+tr('form_cancel')+'</button><button type="submit" class="btn primary">Підтвердити</button></div></form>';
@@ -1632,17 +1607,17 @@ function openChangeUsername(){
 }
 window.openChangeUsername=openChangeUsername;
 
-async function saveUsername(e, target){
+async function saveUsername(e){
   e.preventDefault();
   var oldU = document.getElementById('un-current').value.trim();
   var pass = document.getElementById('un-password').value;
   var newU = document.getElementById('un-new').value.trim();
   var confirmU = document.getElementById('un-confirm').value.trim();
   
-  // Проверяем капчу (выбрана ли хотя бы одна картинка)
-  var selected = document.querySelectorAll('#captcha-grid .captcha-item.selected');
-  if(selected.length === 0) {
-    toast('Виберіть хоча б одне зображення на капчі', true);
+  // Получаем токен от Google reCAPTCHA
+  var recaptchaToken = grecaptcha.getResponse();
+  if(!recaptchaToken) {
+    toast('Будь ласка, підтвердіть, що ви не робот', true);
     return;
   }
   
@@ -1654,21 +1629,33 @@ async function saveUsername(e, target){
         password: pass,
         new_username: newU, 
         new_username_confirm: confirmU,
-        captcha_passed: true // Фронт говорит, что капча пройдена
+        recaptcha_token: recaptchaToken
       }
     });
     
-    // Обновляем данные на лету
+    // Обновляем данные на лету (без дублирования!)
     currentUser.username = res.new_username;
+    
     document.getElementById('current-user').textContent = res.new_username;
     document.getElementById('user-avatar').textContent = res.new_username[0].toUpperCase();
     document.getElementById('dd-name').textContent = res.new_username;
     
     toast('Логін успішно змінено!');
     closeModal();
+    
+    // Перерисовываем текущую вкладку настроек (профиль), 
+    // чтобы имя обновилось в самой карточке "Профіль".
     renderSettingsContent();
+    
+    // Если открыта вкладка "Користувачі", обновляем её
+    if(state.settingsTab === 'users') {
+        renderUsersTab(document.getElementById('settings-content'));
+    }
+    
   }catch(err){
     toast(err.message, true);
+    // Если ошибка, сбрасываем капчу, чтобы можно было попробовать снова
+    if(window.grecaptcha) grecaptcha.reset();
   }
   return false;
 }
