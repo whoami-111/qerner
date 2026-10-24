@@ -434,6 +434,11 @@ def restore_backup():
     # Восстанавливаем клиентов
     imported = 0
     updated = 0
+    
+    # Сначала удаляем старых клиентов, чтобы избежать конфликтов ID при восстановлении
+    # (Это опционально, но так безопаснее для полного восстановления)
+    # c.execute("DELETE FROM clients") 
+    
     for item in data.get("clients", []):
         try:
             order = item.get("order_number")
@@ -474,13 +479,28 @@ def restore_backup():
             continue
 
     # Восстанавливаем историю (удаляем старую, вставляем новую)
+    # ВАЖНО: Привязываем историю к клиентам по order_number, а не по ID, 
+    # так как ID могли измениться при новой генерации.
     if "interactions" in data:
         c.execute("DELETE FROM interactions")
         for it in data["interactions"]:
             try:
-                c.execute("""INSERT INTO interactions (id, client_id, channel, subject, body, user_name, created_at) 
-                             VALUES (%s,%s,%s,%s,%s,%s,%s)""", 
-                          (it.get("id"), it.get("client_id"), it.get("channel"), it.get("subject"), it.get("body"), it.get("user_name"), it.get("created_at")))
+                # Находим ID клиента по номеру заказа
+                order_num = it.get("order_number")
+                cid = None
+                if order_num:
+                    c.execute("SELECT id FROM clients WHERE order_number=%s", (order_num,))
+                    row = c.fetchone()
+                    if row: cid = row[0]
+                
+                # Если не нашли по номеру, пробуем по старому ID (на случай если order_number нет в файле)
+                if not cid and it.get("client_id"):
+                    cid = it.get("client_id")
+
+                if cid:
+                    c.execute("""INSERT INTO interactions (client_id, channel, subject, body, user_name, created_at) 
+                                 VALUES (%s,%s,%s,%s,%s,%s)""", 
+                              (cid, it.get("channel"), it.get("subject"), it.get("body"), it.get("user_name"), it.get("created_at")))
             except Exception as e:
                 print(f"Ошибка импорта истории: {e}")
                 continue
@@ -490,15 +510,19 @@ def restore_backup():
         c.execute("DELETE FROM audit")
         for l in data["audit"]:
             try:
-                c.execute("""INSERT INTO audit (id, action, entity, details, user_name, ip, created_at) 
-                             VALUES (%s,%s,%s,%s,%s,%s,%s)""", 
-                          (l.get("id"), l.get("action"), l.get("entity"), l.get("details"), l.get("user_name"), l.get("ip"), l.get("created_at")))
+                c.execute("""INSERT INTO audit (action, entity, details, user_name, ip, created_at) 
+                             VALUES (%s,%s,%s,%s,%s,%s)""", 
+                          (l.get("action"), l.get("entity"), l.get("details"), l.get("user_name"), l.get("ip"), l.get("created_at")))
             except Exception as e:
                 print(f"Ошибка импорта журнала: {e}")
                 continue
 
     conn.close()
     log_action("db_restore", "system", f"Імпортовано: {imported}, Оновлено: {updated}", g.user["username"])
+    
+    if imported == 0 and updated == 0:
+        return jsonify({"ok": True, "imported": 0, "updated": 0, "msg": "База вже актуальна. Змін не знайдено."})
+        
     return jsonify({"ok": True, "imported": imported, "updated": updated})
 
 @app.route("/api/clients/<int:cid>", methods=["DELETE"])
