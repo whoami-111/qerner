@@ -749,14 +749,27 @@ function openChangeUsername(){
       '<div class="form-row full"><div class="form-group"><label>Поточний пароль</label><input class="form-input" type="password" id="un-password" required></div></div>'+
       '<div class="form-row full"><div class="form-group"><label>Новий логін</label><input class="form-input" id="un-new" required></div></div>'+
       '<div class="form-row full"><div class="form-group"><label>Повторіть новий логін</label><input class="form-input" id="un-confirm" required></div></div>'+
-      // ЗДЕСЬ ТВОЙ НОВЫЙ SITE KEY (v2 "Я не робот")
+      
+      // ВСТАВЬ СЮДА СВОЙ НОВЫЙ SITE KEY ИЗ GOOGLE RECAPTCHA (v2 "Я не робот")
       '<div class="form-row full" style="margin-top:15px; display:flex; justify-content:center;">'+
-        '<div class="g-recaptcha" data-sitekey="6LdrF_8tAAAAAFWQu3PA6_2Ae8KRF9wft7V9eL9Q"></div>'+
+        '<div id="recaptcha-container"></div>'+
       '</div>'+
     '</div>'+
     '<div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">'+tr('form_cancel')+'</button><button type="submit" class="btn primary">Підтвердити</button></div></form>';
+  
   document.getElementById('modal-content').innerHTML=html;
   document.getElementById('modal').classList.add('open');
+
+  // Принудительно рисуем капчу, когда модалка уже открыта
+  setTimeout(function() {
+    if (typeof grecaptcha !== 'undefined' && document.getElementById('recaptcha-container')) {
+      grecaptcha.render('recaptcha-container', {
+        'sitekey': '6LdrF_8tAAAAAFWQu3PA6_2Ae8KRF9wft7V9eL9Q'
+      });
+    } else {
+      console.error("Google reCAPTCHA script not loaded");
+    }
+  }, 100);
 }
 window.openChangeUsername=openChangeUsername;
 
@@ -767,9 +780,18 @@ async function saveUsername(e){
   var newU = document.getElementById('un-new').value.trim();
   var confirmU = document.getElementById('un-confirm').value.trim();
   
-  if (typeof grecaptcha === 'undefined') { toast('Помилка: Капча не завантажилася. Оновіть сторінку (F5) і спробуйте ще раз.', true); return; }
+  // Проверяем, загрузился ли вообще скрипт капчи
+  if (typeof grecaptcha === 'undefined') {
+    toast('Помилка: Капча не завантажилася. Оновіть сторінку (F5) і спробуйте ще раз.', true);
+    return;
+  }
+
+  // Получаем токен от Google reCAPTCHA
   var recaptchaToken = grecaptcha.getResponse();
-  if(!recaptchaToken) { toast('Будь ласка, підтвердіть, що ви не робот (натисніть на квадратик у капчі)', true); return; }
+  if(!recaptchaToken) {
+    toast('Будь ласка, підтвердіть, що ви не робот (натисніть на квадратик у капчі)', true);
+    return;
+  }
   
   try{
     var res = await api('/api/me/username', {
@@ -782,16 +804,29 @@ async function saveUsername(e){
         recaptcha_token: recaptchaToken
       }
     });
+    
+    // Обновляем данные на лету (без дублирования!)
     currentUser.username = res.new_username;
+    
     document.getElementById('current-user').textContent = res.new_username;
     document.getElementById('user-avatar').textContent = res.new_username[0].toUpperCase();
     document.getElementById('dd-name').textContent = res.new_username;
+    
     toast('Логін успішно змінено!');
     closeModal();
+    
+    // Перерисовываем текущую вкладку настроек (профиль), 
+    // чтобы имя обновилось в самой карточке "Профіль".
     renderSettingsContent();
-    if(state.settingsTab === 'users') { renderUsersTab(document.getElementById('settings-content')); }
+    
+    // Если открыта вкладка "Користувачі", обновляем её
+    if(state.settingsTab === 'users') {
+        renderUsersTab(document.getElementById('settings-content'));
+    }
+    
   }catch(err){
     toast(err.message, true);
+    // Если ошибка, сбрасываем капчу, чтобы можно было попробовать снова
     if(window.grecaptcha) grecaptcha.reset();
   }
   return false;
