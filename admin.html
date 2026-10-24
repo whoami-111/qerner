@@ -1596,15 +1596,25 @@ function openChangeUsername(){
       '<div class="form-row full"><div class="form-group"><label>Новий логін</label><input class="form-input" id="un-new" required></div></div>'+
       '<div class="form-row full"><div class="form-group"><label>Повторіть новий логін</label><input class="form-input" id="un-confirm" required></div></div>'+
       
-      // ВОТ ЭТОТ БЛОК БЫЛ ПОТЕРЯН
-      '<div class="form-row full" style="margin-top:15px; display:flex; justify-content:center; min-height:78px;" id="captcha-container">'+
-        '<div class="g-recaptcha" data-sitekey="6LeZ-P4tAAAAAACl4g-Du2vzfrD7LoZrr-k-rJpUk"></div>'+
+      '<div class="form-row full" style="margin-top:15px; display:flex; justify-content:center;">'+
+        '<div id="recaptcha-container"></div>'+
       '</div>'+
     '</div>'+
     '<div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">'+tr('form_cancel')+'</button><button type="submit" class="btn primary">Підтвердити</button></div></form>';
   
   document.getElementById('modal-content').innerHTML=html;
   document.getElementById('modal').classList.add('open');
+
+  // Принудительно рисуем капчу, когда модалка уже открыта
+  setTimeout(function() {
+    if (typeof grecaptcha !== 'undefined' && document.getElementById('recaptcha-container')) {
+      grecaptcha.render('recaptcha-container', {
+        'sitekey': '6LeZ-P4tAAAAAACl4g-Du2vzfrD7LoZrr-k-rJpUk'
+      });
+    } else {
+      console.error("Google reCAPTCHA script not loaded");
+    }
+  }, 100);
 }
 window.openChangeUsername=openChangeUsername;
 
