@@ -17,8 +17,8 @@ import urllib.parse
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Твой секретный ключ от Google reCAPTCHA
-RECAPTCHA_SECRET_KEY = "6LeZ-P4tAAAAAKI1ecgW9taevTP1Z6vSsAduBBzs"
+# Твой НОВЫЙ секретный ключ от Google reCAPTCHA (v2)
+RECAPTCHA_SECRET_KEY = "6LdrF_8tAAAAABmVfFkDvzTCopJMjf9NJeAPHGOn"
 
 app = Flask(__name__, static_folder=None)
 CORS(app, supports_credentials=True)
