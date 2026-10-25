@@ -417,10 +417,31 @@ tbody tr:last-child td{border-bottom:none}
   .filter-group select{font-size:13px;width:100%}
   
   /* --- ИСПРАВЛЕНИЕ МОДАЛКИ НА МОБИЛЬНЫХ --- */
-  .modal-overlay{padding:0;align-items:stretch; overflow-y: auto;} 
-  .modal{max-width:none;border-radius:0;min-height:100vh; display: flex; flex-direction: column; overflow: hidden;}
-  .modal-body{max-height:none;padding:16px; flex: 1; overflow-y: auto; padding-bottom: 100px;} /* Отступ снизу, чтобы кнопки не перекрывали поля */
-  .modal-foot{position:sticky;bottom:0;padding:16px; background: var(--bg-elev); z-index: 10; box-shadow: 0 -4px 12px rgba(0,0,0,0.3);} /* Тень, чтобы визуально отделить кнопки */
+  .modal-overlay{padding:0; align-items: stretch; overflow-y: auto;}
+  .modal { 
+    max-width: none; 
+    border-radius: 0; 
+    height: 100vh; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+    background: var(--bg); 
+  }
+  .modal-body { 
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 16px; 
+    padding-bottom: 30px; /* Отступ, чтобы последние поля не прилипали к краю */
+    -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
+  }
+  .modal-foot { 
+    position: relative; /* Убираем sticky */
+    padding: 16px; 
+    background: var(--bg-elev); 
+    border-top: 1px solid var(--border); 
+    z-index: 10; 
+    flex-shrink: 0;
+  }
   
   .modal-foot .btn{flex:1;height:38px;justify-content:center}
   .form-row,.form-row.three{grid-template-columns:1fr}
