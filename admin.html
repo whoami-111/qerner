@@ -730,7 +730,7 @@ function openPhotoViewer(clientId,i){var c=clientsCache.filter(function(x){retur
 function viewerNav(d){if(!currentPhotoList.length)return;currentPhotoIndex=(currentPhotoIndex+d+currentPhotoList.length)%currentPhotoList.length;document.getElementById('viewer-img').src=currentPhotoList[currentPhotoIndex];} window.viewerNav=viewerNav;
 function closeViewer(){document.getElementById('photo-viewer').classList.remove('open');} window.closeViewer=closeViewer;
 function closeModal(){document.getElementById('modal').classList.remove('open');} window.closeModal=closeModal;
-async function saveClient(e){ e.preventDefault(); var id=document.getElementById('f-id').value; var F=['full_name','company','edrpou','phone','telegram','viber','city','district','address','preferred_messenger','status','source','tech_type','tech_model','problem','notes']; var data={}; F.forEach(function(f){var el=document.getElementById('f-'+f);if(el)data[f]=el.value.trim();}); data.photos=tempPhotos.slice(); try{ if(id){await api('/api/clients/'+id,{method:'PUT',body:data});toast(tr('msg_saved'));} else{var res=await api('/api/clients',{method:'POST',body:data});toast('Створено · '+res.order_number);} closeModal();await loadClients();renderClients();renderDashboard(); }catch(err){toast(err.message,true);} return false; } window.saveClient=saveClient;
+async function saveClient(e){ e.preventDefault(); var id=document.getElementById('f-id').value; var F=['full_name','company','edrpou','phone','telegram','viber','city','district','address','preferred_messenger','status','source','tech_type','tech_model','problem','notes']; var data={}; F.forEach(function(f){var el=document.getElementById('f-'+f);if(el)data[f]=el.value.trim();}); data.photos=tempPhotos.slice(); try{ if(id){await api('/api/clients/'+id,{method:'PUT',body:data});toast(tr('msg_saved'));} else{var res=await api('/api/clients',{method:'POST',body:data});toast('Створено · '+res.order_number);} closeModal();await loadClients();renderClients();renderDashboard(); if(id) { showPage('client-detail'); openClient(id); } }catch(err){toast(err.message,true);} return false; } window.saveClient=saveClient;
 function editClient(id){openClientForm(id);} window.editClient=editClient;
 async function deleteClient(id){ if(!confirm(tr('msg_delete_client')))return; try{await api('/api/clients/'+id,{method:'DELETE'});toast(tr('msg_deleted'));await loadClients();renderClients();renderDashboard();} catch(err){toast(err.message,true);} } window.deleteClient=deleteClient;
 
@@ -840,7 +840,7 @@ function openChangeUsername(){
   document.getElementById('modal-content').innerHTML=html;
   document.getElementById('modal').classList.add('open');
 
-  setTimeout(function() {
+   setTimeout(function() {
     if (typeof grecaptcha !== 'undefined' && document.getElementById('recaptcha-container')) {
       grecaptcha.render('recaptcha-container', {
         'sitekey': '6LdrF_8tAAAAAFWQu3PA6_2Ae8KRF9wft7V9eL9Q'
