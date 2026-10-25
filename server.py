@@ -57,7 +57,7 @@ def init_db():
         created_at VARCHAR(255) NOT NULL, updated_at VARCHAR(255) NOT NULL
     )""")
     
-    # Возвращаем TEXT для фото (надёжнее, чем бинарный формат)
+    # ИЗМЕНЕНО: Используем BYTEA для хранения бинарных данных (фото)
     c.execute("""CREATE TABLE IF NOT EXISTS photos (
         id SERIAL PRIMARY KEY, client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
         data TEXT NOT NULL, created_at VARCHAR(255) NOT NULL
@@ -142,6 +142,30 @@ def next_order_number(prefix):
 
 def prefix_for_source(s):
     return {"walkin": "X", "site": "D", "ad": "S", "repeat": "X1"}.get(s, "X")
+
+def save_photo_binary(c, client_id, base64_str):
+    """Конвертирует base64 в бинарные данные и сохраняет в БД"""
+    try:
+        # Убираем префикс data:image/jpeg;base64, если он есть
+        if ',' in base64_str:
+            base64_str = base64_str.split(',')[1]
+        binary_data = base64.b64decode(base64_str)
+        c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", 
+                  (client_id, binary_data, now_iso()))
+        return True
+    except Exception as e:
+        print(f"ОШИБКА СОХРАНЕНИЯ ФОТО: {e}")
+        return False
+
+def get_photo_base64(photo_data):
+    """Конвертирует бинарные данные обратно в base64 строку для отправки в браузер"""
+    try:
+        if isinstance(photo_data, memoryview):
+            photo_data = photo_data.tobytes()
+        return "data:image/jpeg;base64," + base64.b64encode(photo_data).decode('utf-8')
+    except Exception as e:
+        print(f"ОШИБКА ЧТЕНИЯ ФОТО: {e}")
+        return ""
 
 @app.route("/")
 def index():
@@ -313,13 +337,8 @@ def list_clients():
     out = []
     for r in rows:
         c.execute("SELECT data FROM photos WHERE client_id=%s ORDER BY id", (r["id"],))
-        # Возвращаем как есть, но с префиксом для браузера
-        photos = []
-        for p in c.fetchall():
-            data = p["data"]
-            if not data.startswith("data:image"):
-                data = "data:image/jpeg;base64," + data
-            photos.append(data)
+        # Конвертируем бинарные данные обратно в base64
+        photos = [get_photo_base64(p["data"]) for p in c.fetchall()]
         d = dict(r)
         d["photos"] = photos
         out.append(d)
@@ -363,16 +382,13 @@ def create_client():
             (order, d.get("full_name", ""), d.get("phone", ""), d.get("telegram", ""), d.get("viber", ""), d.get("preferred_messenger", "phone"), d.get("city", ""), d.get("district", ""), d.get("address", ""), d.get("tech_type", ""), d.get("tech_model", ""), d.get("problem", ""), d.get("company", ""), d.get("edrpou", ""), d.get("notes", ""), d.get("source", ""), d.get("status", "active"), g.user["username"], now, now))
         cid = c.fetchone()["id"]
     
-    # Сохраняем фото как есть (строки base64)
+    # Сохраняем фото в бинарном формате
     if "photos" in d:
         c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
         for photo in d["photos"]:
-            try:
-                c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
-            except Exception as e:
-                print(f"Ошибка сохранения фото: {e}")
+            if not save_photo_binary(c, cid, photo):
                 conn.close()
-                return json_error("Не вдалося зберегти фото. Можливо, файл завеликий.")
+                return json_error("Не вдалося зберегти фото. Спробуйте менше зображення.")
                 
     conn.close()
     log_action("client_create", order, f"{d.get('full_name')}", g.user["username"])
@@ -405,12 +421,9 @@ def update_client(cid):
     if "photos" in d:
         c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
         for photo in d["photos"]:
-            try:
-                c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
-            except Exception as e:
-                print(f"Ошибка сохранения фото: {e}")
+            if not save_photo_binary(c, cid, photo):
                 conn.close()
-                return json_error("Не вдалося зберегти фото. Можливо, файл завеликий.")
+                return json_error("Не вдалося зберегти фото. Спробуйте менше зображення.")
                 
     conn.close()
     log_action("client_update", row["order_number"], f"{d.get('full_name')}", g.user["username"])
@@ -426,7 +439,8 @@ def get_backup():
     clients = []
     for r in c.fetchall():
         c.execute("SELECT data FROM photos WHERE client_id=%s ORDER BY id", (r["id"],))
-        photos = [p["data"] for p in c.fetchall()]
+        # Конвертируем бинарные данные в base64 для JSON
+        photos = [get_photo_base64(p["data"]) for p in c.fetchall()]
         d = dict(r)
         d["photos"] = photos
         clients.append(d)
@@ -490,14 +504,10 @@ def restore_backup():
                 imported += 1
                 has_changes = True
             
-            # Восстанавливаем фото
+            # Восстанавливаем фото в бинарном формате
             c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
             for photo in item.get("photos", []):
-                try:
-                    c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", (cid, photo, now_iso()))
-                except Exception as e:
-                    print(f"Ошибка фото при импорте {order}: {e}")
-                    continue
+                save_photo_binary(c, cid, photo)
                     
         except Exception as e:
             print(f"Ошибка импорта клиента {item.get('order_number', 'unknown')}: {e}")
