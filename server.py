@@ -391,6 +391,7 @@ def create_client():
     else:
         order = next_order_number(prefix_for_source(d["source"]))
         now = now_iso()
+        # Используем обычный курсор (не dict_row) для INSERT ... RETURNING
         c.execute("""INSERT INTO clients
             (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
@@ -520,7 +521,10 @@ def restore_backup():
                     (order_number, full_name, phone, telegram, viber, preferred_messenger, city, district, address, tech_type, tech_model, problem, company, edrpou, notes, source, status, created_by, created_at, updated_at)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
                     (order, item.get("full_name", ""), item.get("phone", ""), item.get("telegram", ""), item.get("viber", ""), item.get("preferred_messenger", "phone"), item.get("city", ""), item.get("district", ""), item.get("address", ""), item.get("tech_type", ""), item.get("tech_model", ""), item.get("problem", ""), item.get("company", ""), item.get("edrpou", ""), item.get("notes", ""), item.get("source", ""), item.get("status", "active"), item.get("created_by", g.user["username"]), item.get("created_at", now_iso()), now_iso()))
-                cid = c.fetchone()["id"]
+                
+                # ИСПРАВЛЕНО: c.fetchone() возвращает кортеж, берем элемент по индексу 0
+                row_res = c.fetchone()
+                cid = row_res[0]
                 imported += 1
                 has_changes = True
             
