@@ -163,7 +163,7 @@ def get_photo_base64(photo_data):
     try:
         if isinstance(photo_data, memoryview):
             photo_data = photo_data.tobytes()
-        return "data:image/jpeg;base64," + base64.b64encode(photo_data).decode('utf-8')
+        return base64.b64encode(photo_data).decode('utf-8')
     except Exception as e:
         print(f"ОШИБКА ЧТЕНИЯ ФОТО: {e}")
         return ""
@@ -338,8 +338,11 @@ def list_clients():
     out = []
     for r in rows:
         c.execute("SELECT data FROM photos WHERE client_id=%s ORDER BY id", (r["id"],))
-        # Конвертируем бинарные данные обратно в base64
-        photos = [get_photo_base64(p["data"]) for p in c.fetchall()]
+        photos = []
+        for p in c.fetchall():
+            b64 = get_photo_base64(p["data"])
+            if b64:
+                photos.append("data:image/jpeg;base64," + b64)
         d = dict(r)
         d["photos"] = photos
         out.append(d)
@@ -440,8 +443,11 @@ def get_backup():
     clients = []
     for r in c.fetchall():
         c.execute("SELECT data FROM photos WHERE client_id=%s ORDER BY id", (r["id"],))
-        # Конвертируем бинарные данные в base64 для JSON
-        photos = [get_photo_base64(p["data"]) for p in c.fetchall()]
+        photos = []
+        for p in c.fetchall():
+            b64 = get_photo_base64(p["data"])
+            if b64:
+                photos.append("data:image/jpeg;base64," + b64)
         d = dict(r)
         d["photos"] = photos
         clients.append(d)
