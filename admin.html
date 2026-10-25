@@ -724,7 +724,7 @@ function goToPage(p){state.page=p;renderClients();} window.goToPage=goToPage;
 function openClientForm(id){ id=id||null;tempPhotos=[]; document.getElementById('modal-title').textContent=id?tr('form_edit_client'):tr('form_new_client'); var c=id?clientsCache.filter(function(x){return x.id===id;})[0]:null; if(c&&c.photos)tempPhotos=c.photos.slice(); var sourceOpts=Object.keys(SOURCES).map(function(k){return '<option value="'+k+'">'+SOURCES[k].label+' ('+SOURCES[k].code+')</option>';}).join(''); var techOpts=Object.keys(TECHNOLOGIES).map(function(k){return '<option value="'+k+'">'+TECHNOLOGIES[k]+'</option>';}).join(''); var html='<form onsubmit="saveClient(event)"><div class="modal-body"><input type="hidden" id="f-id" value="'+(id||'')+'">'; if(c&&c.order_number)html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_order_num')+'</label><input class="form-input mono" value="'+esc(c.order_number)+'" disabled></div></div>'; html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_pib')+' *</label><input class="form-input" id="f-full_name" required></div></div>'; html+='<div class="form-row"><div class="form-group"><label>'+tr('form_source')+' *</label><select class="form-input" id="f-source" required><option value="">— Оберіть —</option>'+sourceOpts+'</select></div><div class="form-group"><label>'+tr('form_status')+'</label><select class="form-input" id="f-status"><option value="active">Активний</option><option value="lead">Лід</option><option value="vip">VIP</option><option value="inactive">Неактивний</option></select></div></div>'; html+='<div class="form-row"><div class="form-group"><label>'+tr('form_phone')+' *</label><input class="form-input mono" id="f-phone" required placeholder="+380..."></div><div class="form-group"><label>'+tr('form_tg')+'</label><input class="form-input" id="f-telegram" placeholder="@username"></div></div>'; html+='<div class="form-row"><div class="form-group"><label>'+tr('form_viber')+'</label><input class="form-input mono" id="f-viber" placeholder="+380..."></div><div class="form-group"><label>'+tr('form_messenger')+'</label><select class="form-input" id="f-preferred_messenger"><option value="phone">Телефон</option><option value="telegram">Telegram</option><option value="viber">Viber</option></select></div></div>'; html+='<div class="form-row three"><div class="form-group"><label>'+tr('form_city')+'</label><input class="form-input" id="f-city"></div><div class="form-group"><label>'+tr('form_district')+'</label><input class="form-input" id="f-district"></div><div class="form-group"><label>'+tr('form_address')+'</label><input class="form-input" id="f-address"></div></div>'; html+='<div class="form-row"><div class="form-group"><label>'+tr('form_tech')+' *</label><select class="form-input" id="f-tech_type" required><option value="">— Оберіть —</option>'+techOpts+'</select></div><div class="form-group"><label>'+tr('form_model')+'</label><input class="form-input" id="f-tech_model"></div></div>'; html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_problem')+' *</label><textarea class="form-input" id="f-problem" rows="2" required></textarea></div></div>'; html+='<div class="form-row"><div class="form-group"><label>'+tr('form_company')+'</label><input class="form-input" id="f-company"></div><div class="form-group"><label>'+tr('form_edrpou')+'</label><input class="form-input mono" id="f-edrpou" maxlength="12"></div></div>'; html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_notes')+'</label><textarea class="form-input" id="f-notes" rows="2"></textarea></div></div>'; html+='<div class="form-row full"><div class="form-group"><label>'+tr('form_photo')+'</label><div class="photo-grid" id="photo-grid"></div><div class="photo-upload" onclick="document.getElementById(\'photo-input\').click()">+ '+tr('form_upload')+'</div></div></div>'; html+='</div><div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">'+tr('form_cancel')+'</button><button type="submit" class="btn primary">'+tr('form_save')+'</button></div></form>'; document.getElementById('modal-content').innerHTML=html; var F=['full_name','company','edrpou','phone','telegram','viber','city','district','address','preferred_messenger','status','source','tech_type','tech_model','problem','notes']; F.forEach(function(f){var el=document.getElementById('f-'+f);if(!el)return;if(c)el.value=c[f]||'';else el.value=f==='preferred_messenger'?'phone':f==='status'?'active':'';}); renderPhotoGrid();document.getElementById('modal').classList.add('open'); } window.openClientForm=openClientForm;
 function renderPhotoGrid(){ var grid=document.getElementById('photo-grid');if(!grid)return; if(!tempPhotos.length){grid.innerHTML='';return;} grid.innerHTML=tempPhotos.map(function(p,i){return '<div class="photo-item"><img src="'+p+'" onclick="viewPhotoList('+i+')"><button type="button" class="del-btn" onclick="removePhoto('+i+')">✕</button></div>';}).join(''); }
 function removePhoto(i){tempPhotos.splice(i,1);renderPhotoGrid();} window.removePhoto=removePhoto;
-document.getElementById('photo-input').addEventListener('change',function(e){ var files=Array.from(e.target.files||[]); files.forEach(function(file){ if(!file.type.startsWith('image/'))return; if(file.size>8*1024*1024){toast('Файл завеликий',true);return;} var reader=new FileReader(); reader.onload=function(ev){ var img=new Image(); img.onload=function(){ var canvas=document.createElement('canvas');var maxW=1200,maxH=1200;var w=img.width,h=img.height; if(w>maxW||h>maxH){var r=Math.min(maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);} canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h); tempPhotos.push(canvas.toDataURL('image/jpeg',0.8));renderPhotoGrid(); };img.src=ev.target.result; };reader.readAsDataURL(file); });e.target.value=''; });
+document.getElementById('photo-input').addEventListener('change',function(e){ var files=Array.from(e.target.files||[]); files.forEach(function(file){ if(!file.type.startsWith('image/'))return; if(file.size>8*1024*1024){toast('Файл завеликий',true);return;} var reader=new FileReader(); reader.onload=function(ev){ var img=new Image(); img.onload=function(){ var canvas=document.createElement('canvas');var maxW=800,maxH=800;var w=img.width,h=img.height; if(w>maxW||h>maxH){var r=Math.min(maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);} canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h); tempPhotos.push(canvas.toDataURL('image/jpeg',0.6));renderPhotoGrid(); };img.src=ev.target.result; };reader.readAsDataURL(file); });e.target.value=''; });
 function viewPhotoList(i){currentPhotoList=tempPhotos.slice();currentPhotoIndex=i;document.getElementById('viewer-img').src=currentPhotoList[i];document.getElementById('photo-viewer').classList.add('open');} window.viewPhotoList=viewPhotoList;
 function openPhotoViewer(clientId,i){var c=clientsCache.filter(function(x){return x.id===clientId;})[0];if(!c||!c.photos)return;currentPhotoList=c.photos.slice();currentPhotoIndex=i;document.getElementById('viewer-img').src=currentPhotoList[i];document.getElementById('photo-viewer').classList.add('open');} window.openPhotoViewer=openPhotoViewer;
 function viewerNav(d){if(!currentPhotoList.length)return;currentPhotoIndex=(currentPhotoIndex+d+currentPhotoList.length)%currentPhotoList.length;document.getElementById('viewer-img').src=currentPhotoList[currentPhotoIndex];} window.viewerNav=viewerNav;
@@ -831,7 +831,6 @@ function openChangeUsername(){
       '<div class="form-row full"><div class="form-group"><label>Новий логін</label><input class="form-input" id="un-new" required></div></div>'+
       '<div class="form-row full"><div class="form-group"><label>Повторіть новий логін</label><input class="form-input" id="un-confirm" required></div></div>'+
       
-      // ВСТАВЬ СЮДА СВОЙ НОВЫЙ SITE KEY ИЗ GOOGLE RECAPTCHA (v2 "Я не робот")
       '<div class="form-row full" style="margin-top:15px; display:flex; justify-content:center;">'+
         '<div id="recaptcha-container"></div>'+
       '</div>'+
@@ -841,7 +840,6 @@ function openChangeUsername(){
   document.getElementById('modal-content').innerHTML=html;
   document.getElementById('modal').classList.add('open');
 
-  // Принудительно рисуем капчу, когда модалка уже открыта
   setTimeout(function() {
     if (typeof grecaptcha !== 'undefined' && document.getElementById('recaptcha-container')) {
       grecaptcha.render('recaptcha-container', {
@@ -861,13 +859,11 @@ async function saveUsername(e){
   var newU = document.getElementById('un-new').value.trim();
   var confirmU = document.getElementById('un-confirm').value.trim();
   
-  // Проверяем, загрузился ли вообще скрипт капчи
   if (typeof grecaptcha === 'undefined') {
     toast('Помилка: Капча не завантажилася. Оновіть сторінку (F5) і спробуйте ще раз.', true);
     return;
   }
 
-  // Получаем токен от Google reCAPTCHA
   var recaptchaToken = grecaptcha.getResponse();
   if(!recaptchaToken) {
     toast('Будь ласка, підтвердіть, що ви не робот (натисніть на квадратик у капчі)', true);
@@ -886,7 +882,6 @@ async function saveUsername(e){
       }
     });
     
-    // Обновляем данные на лету (без дублирования!)
     currentUser.username = res.new_username;
     
     document.getElementById('current-user').textContent = res.new_username;
@@ -896,18 +891,14 @@ async function saveUsername(e){
     toast('Логін успішно змінено!');
     closeModal();
     
-    // Перерисовываем текущую вкладку настроек (профиль), 
-    // чтобы имя обновилось в самой карточке "Профіль".
     renderSettingsContent();
     
-    // Если открыта вкладка "Користувачі", обновляем её
     if(state.settingsTab === 'users') {
         renderUsersTab(document.getElementById('settings-content'));
     }
     
   }catch(err){
     toast(err.message, true);
-    // Если ошибка, сбрасываем капчу, чтобы можно было попробовать снова
     if(window.grecaptcha) grecaptcha.reset();
   }
   return false;
