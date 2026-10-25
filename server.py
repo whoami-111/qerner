@@ -524,9 +524,21 @@ def restore_backup():
                 imported += 1
                 has_changes = True
             
+            # Восстанавливаем фото
             c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
-            for photo in item.get("photos", []):
-                save_photo_binary(c, cid, photo)
+            photos_list = item.get("photos", [])
+            for photo in photos_list:
+                if not photo: continue
+                
+                # БРОНИРОВАННАЯ ОЧИСТКА: отрезаем всё, что не является чистым base64
+                if isinstance(photo, str):
+                    if ',' in photo:
+                        photo = photo.split(',')[1]
+                    # На всякий случай убираем пробелы
+                    photo = photo.strip()
+                    
+                    c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", 
+                              (cid, photo, now_iso()))
                     
         except Exception as e:
             print(f"Ошибка импорта клиента {item.get('order_number', 'unknown')}: {e}")
