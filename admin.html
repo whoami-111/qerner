@@ -410,13 +410,32 @@ tbody tr:last-child td{border-bottom:none}
   .metric{padding:14px}
   .metric-value{font-size:22px}
   .table-wrap{display:none}
-  #recent-table { display: none !important; } /* <--- ИСПРАВЛЕНИЕ: скрываем таблицу последней активности */
+  #recent-table { display: none !important; }
   .cards-list{display:flex}
   .filter-bar{gap:6px}
   .filter-search{min-width:100%;max-width:none;height:38px}
   .filter-group{flex:1;min-width:0;height:38px}
   .filter-group select{font-size:13px;width:100%}
   
+  /* --- ИСПРАВЛЕНИЕ НАСТРОЕК НА МОБИЛЬНЫХ --- */
+  .settings-layout { grid-template-columns: 1fr; }
+  .settings-nav { 
+    display: flex; 
+    flex-wrap: wrap; /* Разрешаем перенос на новую строку */
+    gap: 6px; 
+    padding: 10px; 
+    position: static;
+    margin-bottom: 16px;
+  }
+  .settings-nav-item { 
+    flex: 1 1 auto; /* Растягиваем элементы */
+    justify-content: center; /* Центрируем текст */
+    margin: 0; 
+    padding: 10px; 
+    font-size: 13px;
+    min-width: 120px; /* Минимальная ширина */
+  }
+
   /* --- ИСПРАВЛЕНИЕ МОДАЛКИ НА МОБИЛЬНЫХ --- */
   .modal-overlay{padding:0; align-items: stretch; overflow-y: auto;}
   .modal { 
@@ -453,9 +472,6 @@ tbody tr:last-child td{border-bottom:none}
   .detail-name{font-size:17px}
   .detail-actions{width:100%}
   .detail-actions .btn{flex:1;justify-content:center;height:38px}
-  .settings-layout{grid-template-columns:1fr}
-  .settings-nav{position:static;display:flex;overflow-x:auto;gap:4px;padding:6px}
-  .settings-nav-item{flex-shrink:0;margin:0;padding:8px 12px}
   .messenger-grid{grid-template-columns:1fr}
   .photo-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
   #toast{left:12px;right:12px;bottom:16px;max-width:none}
