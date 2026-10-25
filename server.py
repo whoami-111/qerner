@@ -58,7 +58,7 @@ def init_db():
         created_at VARCHAR(255) NOT NULL, updated_at VARCHAR(255) NOT NULL
     )""")
     
-    # ИЗМЕНЕНО: Используем BYTEA для хранения бинарных данных (фото)
+    # Используем TEXT для хранения base64-строки
     c.execute("""CREATE TABLE IF NOT EXISTS photos (
         id SERIAL PRIMARY KEY, client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
         data TEXT NOT NULL, created_at VARCHAR(255) NOT NULL
@@ -145,33 +145,33 @@ def prefix_for_source(s):
     return {"walkin": "X", "site": "D", "ad": "S", "repeat": "X1"}.get(s, "X")
 
 def save_photo_binary(c, client_id, base64_str):
-    """Конвертирует base64 в бинарные данные и сохраняет в БД"""
+    """Сохраняет фото в БД как текстовую строку base64"""
     try:
-        # Убираем префикс data:image/jpeg;base64, если он есть
+        # Если пришел префикс data:image/jpeg;base64, отрезаем его
         if ',' in base64_str:
             base64_str = base64_str.split(',')[1]
-        binary_data = base64.b64decode(base64_str)
+        
+        # Сохраняем как строку
         c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", 
-                  (client_id, binary_data, now_iso()))
+                  (client_id, base64_str, now_iso()))
         return True
     except Exception as e:
         print(f"ОШИБКА СОХРАНЕНИЯ ФОТО: {e}")
         return False
 
 def get_photo_base64(photo_data):
-    """Конвертирует данные обратно в base64 строку для отправки в браузер"""
+    """Возвращает строку base64"""
     try:
         if photo_data is None:
             return ""
-        
-        # Бронированная проверка типов: превращаем всё в байты
+        # Если это memoryview (старые данные), конвертируем в строку
         if isinstance(photo_data, memoryview):
-            photo_data = photo_data.tobytes()
-        elif isinstance(photo_data, str):
-            photo_data = photo_data.encode('utf-8')
-        # Если это уже bytes, ничего не делаем, b64encode их примет
-            
-        return base64.b64encode(photo_data).decode('utf-8')
+            return base64.b64encode(photo_data.tobytes()).decode('utf-8')
+        # Если это байты (старые данные), конвертируем в строку
+        if isinstance(photo_data, bytes):
+            return base64.b64encode(photo_data).decode('utf-8')
+        # Если это уже строка (новые данные), возвращаем как есть
+        return str(photo_data)
     except Exception as e:
         print(f"ОШИБКА ЧТЕНИЯ ФОТО: {e}")
         return ""
@@ -350,7 +350,10 @@ def list_clients():
         for p in c.fetchall():
             b64 = get_photo_base64(p["data"])
             if b64:
-                photos.append("data:image/jpeg;base64," + b64)
+                if not b64.startswith("data:image"):
+                    photos.append("data:image/jpeg;base64," + b64)
+                else:
+                    photos.append(b64)
         d = dict(r)
         d["photos"] = photos
         out.append(d)
@@ -394,7 +397,6 @@ def create_client():
             (order, d.get("full_name", ""), d.get("phone", ""), d.get("telegram", ""), d.get("viber", ""), d.get("preferred_messenger", "phone"), d.get("city", ""), d.get("district", ""), d.get("address", ""), d.get("tech_type", ""), d.get("tech_model", ""), d.get("problem", ""), d.get("company", ""), d.get("edrpou", ""), d.get("notes", ""), d.get("source", ""), d.get("status", "active"), g.user["username"], now, now))
         cid = c.fetchone()["id"]
     
-    # Сохраняем фото в бинарном формате
     if "photos" in d:
         c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
         for photo in d["photos"]:
@@ -455,7 +457,10 @@ def get_backup():
         for p in c.fetchall():
             b64 = get_photo_base64(p["data"])
             if b64:
-                photos.append("data:image/jpeg;base64," + b64)
+                if not b64.startswith("data:image"):
+                    photos.append("data:image/jpeg;base64," + b64)
+                else:
+                    photos.append(b64)
         d = dict(r)
         d["photos"] = photos
         clients.append(d)
@@ -519,7 +524,6 @@ def restore_backup():
                 imported += 1
                 has_changes = True
             
-            # Восстанавливаем фото в бинарном формате
             c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
             for photo in item.get("photos", []):
                 save_photo_binary(c, cid, photo)
