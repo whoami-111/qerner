@@ -598,7 +598,9 @@ tbody tr:last-child td{border-bottom:none}
       </div>
 
       <div class="page" id="page-analytics">
-        <div class="page-head"><div><div class="page-title" data-i18n="menu_analytics">Аналітика</div></div></div>
+        <div class="page-head">
+          <div><div class="page-title" data-i18n="menu_analytics">Аналітика</div><div class="page-desc">Глибокий аналіз вашої бази клієнтів</div></div>
+        </div>
         <div id="analytics-view"></div>
       </div>
 
@@ -864,7 +866,168 @@ function uploadBackup(e) {
 } 
 window.uploadBackup = uploadBackup;
 
-function renderAnalytics(){ var clients=clientsCache; var srcStats=Object.keys(SOURCES).map(function(k){return{key:k,count:clients.filter(function(c){return c.source===k;}).length};}); var maxSrc=Math.max.apply(null,srcStats.map(function(x){return x.count;}).concat([1])); var techStats=Object.keys(TECHNOLOGIES).map(function(k){return{key:k,count:clients.filter(function(c){return c.tech_type===k;}).length};}); var maxTech=Math.max.apply(null,techStats.map(function(x){return x.count;}).concat([1])); var cities={};clients.forEach(function(c){if(c.city)cities[c.city]=(cities[c.city]||0)+1;}); var topCities=Object.keys(cities).map(function(k){return{name:k,count:cities[k]};}).sort(function(a,b){return b.count-a.count;}).slice(0,8); var html='<div class="grid-2"><div class="panel"><div class="panel-head"><div class="panel-title">'+tr('th_source')+'</div></div><div class="panel-body">'; srcStats.forEach(function(s){html+='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>'+sourceLabel(s.key)+' ('+sourceCode(s.key)+')</span><span style="font-family:var(--mono)">'+s.count+'</span></div><div style="height:3px;background:var(--surface-3);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+Math.round(s.count/maxSrc*100)+'%;background:var(--text-2)"></div></div></div>';}); html+='</div></div><div class="panel"><div class="panel-head"><div class="panel-title">'+tr('th_tech')+'</div></div><div class="panel-body">'; techStats.forEach(function(s){html+='<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>'+techLabel(s.key)+'</span><span style="font-family:var(--mono)">'+s.count+'</span></div><div style="height:3px;background:var(--surface-3);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+Math.round(s.count/maxTech*100)+'%;background:var(--info)"></div></div></div>';}); html+='</div></div></div><div class="panel"><div class="panel-head"><div class="panel-title">'+tr('form_city')+'</div></div><div class="panel-body">'; if(!topCities.length)html+=emptyState('◌','Немає даних',''); else topCities.forEach(function(c){html+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:13px"><span>'+esc(c.name)+'</span><span style="font-family:var(--mono)">'+c.count+'</span></div>';}); html+='</div></div>'; document.getElementById('analytics-view').innerHTML=html; }
+// --- НОВАЯ КРАСИВАЯ АНАЛИТИКА ---
+function renderAnalytics(){ 
+  var clients = clientsCache; 
+  var total = clients.length || 1;
+  
+  // 1. Подсчет данных
+  var activeCount = clients.filter(function(c){return c.status==='active';}).length;
+  var vipCount = clients.filter(function(c){return c.status==='vip';}).length;
+  var leadCount = clients.filter(function(c){return c.status==='lead';}).length;
+  
+  // 2. Подсчет источников
+  var srcStats = Object.keys(SOURCES).map(function(k){
+    return { key: k, label: SOURCES[k].label, count: clients.filter(function(c){return c.source===k;}).length };
+  });
+  
+  // 3. Подсчет техники
+  var techStats = Object.keys(TECHNOLOGIES).map(function(k){
+    return { key: k, label: TECHNOLOGIES[k], count: clients.filter(function(c){return c.tech_type===k;}).length };
+  });
+
+  // 4. Города
+  var cities = {};
+  clients.forEach(function(c){ if(c.city) cities[c.city] = (cities[c.city]||0)+1; });
+  var topCities = Object.keys(cities).map(function(k){return {name:k, count:cities[k]};}).sort(function(a,b){return b.count-a.count;}).slice(0,5);
+
+  // 5. Топ клиентов (VIP или просто последние)
+  var topClients = clients.filter(function(c){return c.status==='vip';}).slice(0, 5);
+  if (topClients.length === 0) topClients = clients.slice(0, 5); // Если нет VIP, показываем просто последних
+
+  // --- ГЕНЕРАЦИЯ HTML ---
+  
+  // KPI Карточки
+  var kpiHtml = '<div class="metrics" style="margin-bottom:24px">' +
+    '<div class="metric" style="padding:20px; border-radius:8px; background:var(--surface); border:1px solid var(--border)">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+        '<div class="metric-label" style="color:var(--text-2)">Всього клієнтів</div>' +
+        '<span style="font-size:20px; opacity:0.5;">👥</span>' +
+      '</div>' +
+      '<div class="metric-value" style="font-size:36px; margin-top:10px; color:var(--white)">' + clients.length + '</div>' +
+      '<div class="metric-foot" style="color:var(--active)">' + Math.round(activeCount/total*100) + '% активних</div>' +
+    '</div>' +
+    '<div class="metric" style="padding:20px; border-radius:8px; background:var(--surface); border:1px solid var(--border)">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+        '<div class="metric-label" style="color:var(--text-2)">VIP Клієнти</div>' +
+        '<span style="font-size:20px; opacity:0.5;">👑</span>' +
+      '</div>' +
+      '<div class="metric-value" style="font-size:36px; margin-top:10px; color:var(--vip)">' + vipCount + '</div>' +
+      '<div class="metric-foot" style="color:var(--text-3)">Найвищий пріоритет</div>' +
+    '</div>' +
+    '<div class="metric" style="padding:20px; border-radius:8px; background:var(--surface); border:1px solid var(--border)">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+        '<div class="metric-label" style="color:var(--text-2)">В обробці (Ліди)</div>' +
+        '<span style="font-size:20px; opacity:0.5;">🔥</span>' +
+      '</div>' +
+      '<div class="metric-value" style="font-size:36px; margin-top:10px; color:var(--lead)">' + leadCount + '</div>' +
+      '<div class="metric-foot" style="color:var(--text-3)">Потребують уваги</div>' +
+    '</div>' +
+  '</div>';
+
+  // Donut Chart для Источников
+  var srcHtml = '<div class="panel" style="border-radius:8px; background:var(--surface);">' +
+    '<div class="panel-head" style="border-bottom:none; padding-bottom:0;"><div class="panel-title" style="color:var(--text)">ДЖЕРЕЛА КЛІЄНТІВ</div></div>' +
+    '<div class="panel-body" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:250px;">';
+    
+    // Рисуем SVG круговую диаграмму
+    var totalSrc = srcStats.reduce(function(a,b){return a+b.count;},0) || 1;
+    var colors = {'walkin':'var(--info)', 'site':'var(--active)', 'ad':'var(--lead)', 'repeat':'var(--vip)'};
+    var cumulativePercent = 0;
+    var svgContent = '';
+    
+    srcStats.forEach(function(s) {
+      var percent = (s.count / totalSrc) * 100;
+      if (percent > 0) {
+        var strokeDasharray = percent + ' ' + (100 - percent);
+        var strokeDashoffset = 25 - cumulativePercent;
+        svgContent += '<circle cx="50" cy="50" r="40" fill="transparent" stroke="'+colors[s.key]+'" stroke-width="20" stroke-dasharray="'+strokeDasharray+'" stroke-dashoffset="'+strokeDashoffset+'"></circle>';
+        cumulativePercent += percent;
+      }
+    });
+
+    srcHtml += '<svg viewBox="0 0 100 100" style="width:180px; height:180px; transform: rotate(-90deg);">' + svgContent + '</svg>';
+    
+    // Легенда
+    srcHtml += '<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:20px;">';
+    srcStats.forEach(function(s){
+       srcHtml += '<div style="display:flex; align-items:center; gap:6px; font-size:12px;"><span style="width:10px; height:10px; border-radius:50%; background:'+colors[s.key]+'"></span>'+s.label+' ('+s.count+')</div>';
+    });
+    srcHtml += '</div></div></div>';
+
+  // Progress Bars для Техники
+  var techHtml = '<div class="panel" style="border-radius:8px; background:var(--surface);">' +
+    '<div class="panel-head" style="border-bottom:none; padding-bottom:0;"><div class="panel-title" style="color:var(--text)">ТЕХНІКА</div></div>' +
+    '<div class="panel-body">';
+    var maxTech = Math.max.apply(null, techStats.map(function(x){return x.count;}).concat([1]));
+    techStats.forEach(function(s){
+      var percent = Math.round(s.count / maxTech * 100);
+      techHtml += '<div style="margin-bottom:16px">' +
+        '<div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">' +
+          '<span style="color:var(--text-2)">' + s.label + '</span>' +
+          '<span style="font-family:var(--mono); font-weight:600; color:var(--text)">' + s.count + '</span>' +
+        '</div>' +
+        '<div style="height:6px; background:var(--border); border-radius:3px; overflow:hidden;">' +
+          '<div style="height:100%; width:' + percent + '%; background:linear-gradient(90deg, var(--info), var(--vip)); border-radius:3px;"></div>' +
+        '</div>' +
+      '</div>';
+    });
+    techHtml += '</div></div>';
+
+  // Города (Рейтинг)
+  var cityHtml = '<div class="panel" style="border-radius:8px; background:var(--surface);">' +
+    '<div class="panel-head" style="border-bottom:none; padding-bottom:0;"><div class="panel-title" style="color:var(--text)">ГЕОГРАФІЯ (ТОП-5)</div></div>' +
+    '<div class="panel-body">';
+    if(topCities.length === 0) {
+      cityHtml += '<div class="empty" style="padding:20px 0">Немає даних</div>';
+    } else {
+      var maxCity = Math.max.apply(null, topCities.map(function(x){return x.count;}).concat([1]));
+      topCities.forEach(function(c, index){
+        var percent = Math.round(c.count / maxCity * 100);
+        cityHtml += '<div style="display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--border-soft);">' +
+          '<div style="width:20px; font-weight:600; color:var(--text-3); font-size:12px; text-align:center;">' + (index+1) + '</div>' +
+          '<div style="flex:1;">' +
+             '<div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">' +
+               '<span style="color:var(--text)">' + c.name + '</span>' +
+               '<span style="font-family:var(--mono); color:var(--text-2)">' + c.count + '</span>' +
+             '</div>' +
+             '<div style="height:4px; background:var(--border); border-radius:2px; overflow:hidden;">' +
+               '<div style="height:100%; width:' + percent + '%; background:var(--text-2); border-radius:2px;"></div>' +
+             '</div>' +
+          '</div>' +
+        '</div>';
+      });
+    }
+    cityHtml += '</div></div>';
+
+  // Топ клиентов
+  var topClientsHtml = '<div class="panel" style="border-radius:8px; background:var(--surface); grid-column: 1 / -1;">' +
+    '<div class="panel-head" style="border-bottom:none; padding-bottom:0;"><div class="panel-title" style="color:var(--text)">ТОП КЛІЄНТІВ</div></div>' +
+    '<div class="panel-body">';
+    if(topClients.length === 0) {
+      topClientsHtml += '<div class="empty" style="padding:20px 0">Немає даних</div>';
+    } else {
+      topClientsHtml += '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px;">';
+      topClients.forEach(function(c){
+         topClientsHtml += '<div style="background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:12px; display:flex; align-items:center; gap:10px;">' +
+            '<div class="cell-avatar" style="width:36px; height:36px; font-size:14px;">' + initials(c.full_name) + '</div>' +
+            '<div style="flex:1; min-width:0;">' +
+               '<div style="font-size:13px; font-weight:600; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(c.full_name) + '</div>' +
+               '<div style="font-size:11px; color:var(--text-3); font-family:var(--mono);">' + (c.order_number||'') + '</div>' +
+            '</div>' +
+            (c.status==='vip' ? '<span style="font-size:16px;">👑</span>' : '') +
+         '</div>';
+      });
+      topClientsHtml += '</div>';
+    }
+    topClientsHtml += '</div></div>';
+
+  // Собираем все вместе
+  document.getElementById('analytics-view').innerHTML = 
+    kpiHtml + 
+    '<div class="grid-2" style="margin-bottom:16px;">' + srcHtml + techHtml + '</div>' + 
+    '<div class="grid-2">' + cityHtml + topClientsHtml + '</div>';
+}
 
 async function renderAudit(){ var logs=[]; try{ logs = await api('/api/audit'); }catch(e){} if(!logs.length){ document.getElementById('audit-table').innerHTML = emptyState('▦', tr('msg_error') || 'Журнал порожній', ''); return; } var labels={ login:'Вхід', login_fail:'Невдалий вхід', logout:'Вихід', client_create:'Створення', client_update:'Оновлення', client_delete:'Видалення', interaction_add:'Взаємодія', password_change:'Пароль', user_create:'Юзер+', user_update:'Юзер~', user_delete:'Юзер-', lang_change:'Мова', srm_sync:'SRM', audit_clear:'Очищення', username_change: 'Зміна логіну', db_restore: 'Відновлення БД' }; var html = '<table><thead><tr>'+ '<th>'+tr('audit_time')+'</th>'+ '<th>'+tr('audit_user')+'</th>'+ '<th>IP</th>'+ '<th>'+tr('audit_action')+'</th>'+ '<th>'+tr('audit_obj')+'</th>'+ '</tr></thead><tbody>'; var mobHtml = ''; logs.slice(0, 300).forEach(function(l){ var userTxt = l.user_name || 'system'; var ipTxt = l.ip || '—'; var objTxt = l.entity || '—'; var actionTxt = labels[l.action] || l.action; var userColor = 'var(--text)'; var userBorder = 'transparent'; if (userTxt === 'root') { userColor = '#fbbf24'; userBorder = 'rgba(251,191,36,.4)'; } else if (userTxt === 'admin') { userColor = 'var(--vip)'; userBorder = 'rgba(163,113,247,.4)'; } else if (userTxt !== 'system') { userColor = 'var(--info)'; userBorder = 'rgba(88,166,255,.4)'; } var userHtml = '<span style="font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:4px;border:1px solid '+userBorder+';color:'+userColor+'">'+esc(userTxt)+'</span>'; var isOrder = /^[A-Z0-9]+-\d{6}$/.test(objTxt); var objHtml = isOrder ? '<a href="#" onclick="showQuickClient(\''+objTxt+'\');return false" style="color:var(--info);text-decoration:underline;font-weight:600;font-family:var(--mono)">'+objTxt+'</a>' : '<span style="font-family:var(--mono);color:var(--text-2)">'+objTxt+'</span>'; html += '<tr>'+ '<td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3);white-space:nowrap">'+fmtDate(l.created_at)+'</td>'+ '<td>'+userHtml+'</td>'+ '<td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3)">'+esc(ipTxt)+'</td>'+ '<td><span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;text-transform:uppercase">'+esc(actionTxt)+'</span></td>'+ '<td style="font-size:12.5px">'+objHtml+'</td>'+ '</tr>'; mobHtml += '<div class="mob-card" style="margin-bottom:8px;padding:12px">'+ '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+ '<span style="font-family:var(--mono);font-size:11px;color:var(--text-3)">'+fmtDate(l.created_at)+'</span>'+ '<span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;text-transform:uppercase">'+esc(actionTxt)+'</span>'+ '</div>'+ '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px">'+ '<span style="color:var(--text-2)">'+tr('audit_user')+':</span>'+ userHtml+ '</div>'+ '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">'+ '<span style="color:var(--text-2)">IP:</span>'+ '<span style="font-family:var(--mono);color:var(--text-3)">'+esc(ipTxt)+'</span>'+ '</div>'+ '<div style="display:flex;justify-content:space-between;font-size:12px;align-items:center">'+ '<span style="color:var(--text-2)">'+tr('audit_obj')+':</span>'+ '<span>'+objHtml+'</span>'+ '</div>'+ '</div>'; }); html += '</tbody></table>'; document.getElementById('audit-table').innerHTML = html; document.getElementById('audit-mobile').innerHTML = mobHtml; }
 
