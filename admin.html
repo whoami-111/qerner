@@ -480,12 +480,12 @@ tbody tr:last-child td{border-bottom:none}
   #toast{left:12px;right:12px;bottom:16px;max-width:none}
 }
 
-/* --- СТИЛИ ДЛЯ ПРЕМИУМ АНАЛИТИКИ --- */
+/* --- СТИЛИ ДЛЯ КОМПАКТНОЙ АНАЛИТИКИ --- */
 .analytics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 @media (max-width: 1100px) {
   .analytics-grid { grid-template-columns: repeat(2, 1fr); }
@@ -494,86 +494,78 @@ tbody tr:last-child td{border-bottom:none}
   .analytics-grid { grid-template-columns: 1fr; }
 }
 .stat-card {
-  background: var(--surface);
+  background: var(--bg-elev);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 8px;
+  padding: 16px;
   position: relative;
-  overflow: hidden;
-  transition: transform 0.2s;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-}
-.stat-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
 }
 .stat-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; height: 3px;
-  background: linear-gradient(90deg, transparent, var(--info), transparent);
-  opacity: 0.5;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: var(--border-strong);
+  border-radius: 8px 8px 0 0;
 }
-.stat-card.vip::before { background: linear-gradient(90deg, transparent, var(--vip), transparent); }
-.stat-card.lead::before { background: linear-gradient(90deg, transparent, var(--lead), transparent); }
-.stat-card.active::before { background: linear-gradient(90deg, transparent, var(--active), transparent); }
+.stat-card.active::before { background: var(--active); }
+.stat-card.vip::before { background: var(--vip); }
+.stat-card.lead::before { background: var(--lead); }
 
 .stat-icon {
-  width: 40px; height: 40px;
-  border-radius: 10px;
+  width: 32px; height: 32px;
+  border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px;
-  margin-bottom: 16px;
-  background: rgba(88, 166, 255, 0.1);
-  color: var(--info);
+  font-size: 16px;
+  margin-bottom: 12px;
+  background: var(--surface-2);
+  color: var(--text-2);
 }
-.stat-card.vip .stat-icon { background: rgba(163, 113, 247, 0.1); color: var(--vip); }
-.stat-card.lead .stat-icon { background: rgba(210, 153, 34, 0.1); color: var(--lead); }
-.stat-card.active .stat-icon { background: rgba(63, 185, 80, 0.1); color: var(--active); }
+.stat-card.vip .stat-icon { color: var(--vip); }
+.stat-card.lead .stat-icon { color: var(--lead); }
+.stat-card.active .stat-icon { color: var(--active); }
 
-.stat-label { font-size: 12px; color: var(--text-2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-.stat-value { font-size: 32px; font-weight: 700; color: var(--white); line-height: 1.2; margin-top: 4px; }
-.stat-sub { font-size: 12px; color: var(--text-3); margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+.stat-label { font-size: 11px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: 24px; font-weight: 700; color: var(--white); line-height: 1.2; margin-top: 4px; }
+.stat-sub { font-size: 11px; color: var(--text-3); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
 
 .chart-panel {
-  background: var(--surface);
+  background: var(--bg-elev);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 16px;
 }
 .chart-title {
-  font-size: 13px; font-weight: 600; color: var(--white); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
 }
 .chart-title::before {
-  content: ''; display: block; width: 4px; height: 16px; background: var(--info); border-radius: 2px;
+  content: ''; display: block; width: 3px; height: 12px; background: var(--info); border-radius: 2px;
 }
 
 /* Донат-чарт */
-.donut-container { display: flex; align-items: center; justify-content: center; position: relative; height: 220px; }
-.donut-svg { width: 180px; height: 180px; transform: rotate(-90deg); }
+.donut-container { display: flex; align-items: center; justify-content: center; position: relative; height: 160px; }
+.donut-svg { width: 140px; height: 140px; transform: rotate(-90deg); }
 .donut-segment { transition: stroke-dasharray 0.5s ease; }
 .donut-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-.donut-center-value { font-size: 24px; font-weight: 700; color: var(--white); line-height: 1; }
-.donut-center-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; margin-top: 4px; }
+.donut-center-value { font-size: 20px; font-weight: 700; color: var(--white); line-height: 1; }
+.donut-center-label { font-size: 9px; color: var(--text-3); text-transform: uppercase; margin-top: 4px; }
 
-.legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); }
-.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-2); }
+.legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .legend-value { margin-left: auto; font-family: var(--mono); font-weight: 600; color: var(--text); }
 
 /* Списки */
-.list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-soft); }
+.list-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); }
 .list-item:last-child { border-bottom: none; }
-.list-rank { width: 24px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--text-3); font-weight: 600; }
+.list-rank { width: 16px; text-align: center; font-family: var(--mono); font-size: 11px; color: var(--text-3); font-weight: 600; }
 .list-content { flex: 1; min-width: 0; }
-.list-title { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.list-bar-bg { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
-.list-bar-fill { height: 100%; background: var(--info); border-radius: 2px; }
-.list-value { font-family: var(--mono); font-size: 12px; color: var(--text-2); }
+.list-title { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-bar-bg { height: 3px; background: var(--border); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.list-bar-fill { height: 100%; background: var(--text-3); border-radius: 2px; }
+.list-value { font-family: var(--mono); font-size: 11px; color: var(--text-2); }
 
 /* Топ клиентов */
-.top-client-row { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
+.top-client-row { display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; }
 .top-client-row:last-child { margin-bottom: 0; }
 </style>
 </head>
@@ -962,7 +954,7 @@ function uploadBackup(e) {
 } 
 window.uploadBackup = uploadBackup;
 
-// --- ПРЕМИУМ АНАЛИТИКА ---
+// --- КОМПАКТНАЯ АНАЛИТИКА ---
 function renderAnalytics(){ 
   var clients = clientsCache; 
   var total = clients.length || 1;
@@ -989,7 +981,7 @@ function renderAnalytics(){
 
   // 5. Топ клиентов (VIP или просто последние)
   var topClients = clients.filter(function(c){return c.status==='vip';}).slice(0, 5);
-  if (topClients.length === 0) topClients = clients.slice(0, 5); // Если нет VIP, показываем просто последних
+  if (topClients.length === 0) topClients = clients.slice(0, 5);
 
   // --- ГЕНЕРАЦИЯ HTML ---
   
@@ -1014,10 +1006,10 @@ function renderAnalytics(){
       '<div class="stat-sub">Потребують уваги</div>' +
     '</div>' +
     '<div class="stat-card">' +
-      '<div class="stat-icon">⚡</div>' +
-      '<div class="stat-label">Сер. чек / Активність</div>' +
-      '<div class="stat-value" style="font-size:24px;">—</div>' +
-      '<div class="stat-sub">Незабаром</div>' +
+      '<div class="stat-icon">📈</div>' +
+      '<div class="stat-label">Конверсія</div>' +
+      '<div class="stat-value">' + (leadCount>0 ? Math.round((activeCount/leadCount)*100) : 0) + '%</div>' +
+      '<div class="stat-sub">Ліди → Активні</div>' +
     '</div>' +
   '</div>';
 
@@ -1069,7 +1061,7 @@ function renderAnalytics(){
           '<span style="font-family:var(--mono); font-weight:600; color:var(--text)">' + s.count + '</span>' +
         '</div>' +
         '<div style="height:6px; background:var(--border); border-radius:3px; overflow:hidden;">' +
-          '<div style="height:100%; width:' + percent + '%; background:linear-gradient(90deg, var(--info), var(--vip)); border-radius:3px;"></div>' +
+          '<div style="height:100%; width:' + percent + '%; background:var(--info); border-radius:3px;"></div>' +
         '</div>' +
       '</div>';
     });
@@ -1108,12 +1100,12 @@ function renderAnalytics(){
     } else {
       topClients.forEach(function(c){
          topClientsHtml += '<div class="top-client-row">' +
-            '<div class="cell-avatar" style="width:32px; height:32px; font-size:12px;">' + initials(c.full_name) + '</div>' +
+            '<div class="cell-avatar" style="width:28px; height:28px; font-size:11px;">' + initials(c.full_name) + '</div>' +
             '<div style="flex:1; min-width:0;">' +
-               '<div style="font-size:13px; font-weight:600; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(c.full_name) + '</div>' +
-               '<div style="font-size:11px; color:var(--text-3); font-family:var(--mono);">' + (c.order_number||'') + '</div>' +
+               '<div style="font-size:12px; font-weight:600; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(c.full_name) + '</div>' +
+               '<div style="font-size:10px; color:var(--text-3); font-family:var(--mono);">' + (c.order_number||'') + '</div>' +
             '</div>' +
-            (c.status==='vip' ? '<span style="font-size:16px;">👑</span>' : '') +
+            (c.status==='vip' ? '<span style="font-size:14px;">👑</span>' : '') +
          '</div>';
       });
     }
