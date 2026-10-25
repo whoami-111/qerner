@@ -527,18 +527,28 @@ def restore_backup():
             # Восстанавливаем фото
             c.execute("DELETE FROM photos WHERE client_id=%s", (cid,))
             photos_list = item.get("photos", [])
+            
+            # ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ
+            if photos_list:
+                print(f"DEBUG RESTORE: Клиент {order}. Получено фото: {len(photos_list)}")
+                print(f"DEBUG RESTORE: Тип первого фото: {type(photos_list[0])}")
+                print(f"DEBUG RESTORE: Первые 50 символов: {str(photos_list[0])[:50]}")
+
             for photo in photos_list:
                 if not photo: continue
                 
-                # БРОНИРОВАННАЯ ОЧИСТКА: отрезаем всё, что не является чистым base64
+                # Если вдруг пришла строка
                 if isinstance(photo, str):
                     if ',' in photo:
                         photo = photo.split(',')[1]
-                    # На всякий случай убираем пробелы
                     photo = photo.strip()
-                    
                     c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", 
                               (cid, photo, now_iso()))
+                # Если вдруг пришли байты (на всякий случай)
+                elif isinstance(photo, bytes):
+                    b64_str = base64.b64encode(photo).decode('utf-8')
+                    c.execute("INSERT INTO photos (client_id, data, created_at) VALUES (%s,%s,%s)", 
+                              (cid, b64_str, now_iso()))
                     
         except Exception as e:
             print(f"Ошибка импорта клиента {item.get('order_number', 'unknown')}: {e}")
