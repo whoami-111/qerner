@@ -159,10 +159,18 @@ def save_photo_binary(c, client_id, base64_str):
         return False
 
 def get_photo_base64(photo_data):
-    """Конвертирует бинарные данные обратно в base64 строку для отправки в браузер"""
+    """Конвертирует данные обратно в base64 строку для отправки в браузер"""
     try:
+        if photo_data is None:
+            return ""
+        
+        # Бронированная проверка типов: превращаем всё в байты
         if isinstance(photo_data, memoryview):
             photo_data = photo_data.tobytes()
+        elif isinstance(photo_data, str):
+            photo_data = photo_data.encode('utf-8')
+        # Если это уже bytes, ничего не делаем, b64encode их примет
+            
         return base64.b64encode(photo_data).decode('utf-8')
     except Exception as e:
         print(f"ОШИБКА ЧТЕНИЯ ФОТО: {e}")
