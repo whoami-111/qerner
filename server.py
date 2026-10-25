@@ -76,6 +76,18 @@ def init_db():
         prefix VARCHAR(10) PRIMARY KEY, counter INTEGER NOT NULL DEFAULT 0
     )""")
     
+    # --- ТАБЛИЦА ДЛЯ ФИНАНСОВ ---
+    c.execute("""CREATE TABLE IF NOT EXISTS finance (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        investment REAL DEFAULT 0,
+        current_amount REAL DEFAULT 0,
+        updated_at VARCHAR(255)
+    )""")
+    # Проверяем, есть ли запись с id=1
+    c.execute("SELECT id FROM finance WHERE id=1")
+    if not c.fetchone():
+        c.execute("INSERT INTO finance (id, investment, current_amount, updated_at) VALUES (1, 0, 0, %s)", (now_iso(),))
+    
     c.execute("SELECT id FROM users WHERE role='root'")
     if not c.fetchone():
         c.execute("""INSERT INTO users (username,email,password_hash,role,lang,active,locked,created_at)
@@ -473,11 +485,17 @@ def get_backup():
     c.execute("SELECT * FROM audit ORDER BY id")
     audit = [dict(r) for r in c.fetchall()]
     
+    # Добавляем финансы в бэкап
+    c.execute("SELECT * FROM finance WHERE id=1")
+    finance_row = c.fetchone()
+    finance = dict(finance_row) if finance_row else {"investment": 0, "current_amount": 0}
+    
     conn.close()
     return jsonify({
         "clients": clients,
         "interactions": interactions,
-        "audit": audit
+        "audit": audit,
+        "finance": finance
     })
 
 @app.route("/api/backup", methods=["POST"])
@@ -598,6 +616,15 @@ def restore_backup():
                 print(f"Ошибка импорта журнала: {e}")
                 continue
 
+    # Восстанавливаем финансы
+    if "finance" in data:
+        fin = data["finance"]
+        if fin and isinstance(fin, dict):
+            inv = float(fin.get("investment", 0))
+            cur = float(fin.get("current_amount", 0))
+            c.execute("UPDATE finance SET investment=%s, current_amount=%s, updated_at=%s WHERE id=1", (inv, cur, now_iso()))
+            has_changes = True
+
     conn.close()
     log_action("db_restore", "system", f"Імпортовано: {imported}, Оновлено: {updated}", g.user["username"])
     
@@ -645,6 +672,38 @@ def add_interaction(cid):
     conn.close()
     log_action("interaction_add", row["order_number"] if row else "", d.get("channel", ""), g.user["username"])
     return jsonify({"ok": True})
+
+# --- НОВЫЕ МАРШРУТЫ ДЛЯ ФИНАНСОВ ---
+
+@app.route("/api/finance", methods=["GET"])
+@require_auth
+def get_finance():
+    conn = get_db()
+    c = conn.cursor(row_factory=dict_row)
+    c.execute("SELECT * FROM finance WHERE id=1")
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({"investment": 0, "current_amount": 0})
+    return jsonify(dict(row))
+
+@app.route("/api/finance", methods=["POST"])
+@require_auth
+def update_finance():
+    if g.user["role"] != "root":
+        return json_error("Тільки root може змінювати фінанси", 403)
+    d = request.get_json() or {}
+    inv = float(d.get("investment", 0))
+    cur = float(d.get("current_amount", 0))
+    
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("UPDATE finance SET investment=%s, current_amount=%s, updated_at=%s WHERE id=1", (inv, cur, now_iso()))
+    conn.close()
+    log_action("finance_update", "finance", f"Inv: {inv}, Cur: {cur}", g.user["username"])
+    return jsonify({"ok": True})
+
+# --- КОНЕЦ НОВЫХ МАРШРУТОВ ---
 
 @app.route("/api/users", methods=["GET"])
 @require_auth
