@@ -1,5 +1,6 @@
 import os
 import secrets
+import base64
 import psycopg
 from psycopg.rows import dict_row
 from datetime import datetime, timedelta, timezone
