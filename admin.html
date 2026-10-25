@@ -416,11 +416,11 @@ tbody tr:last-child td{border-bottom:none}
   .filter-group{flex:1;min-width:0;height:38px}
   .filter-group select{font-size:13px;width:100%}
   
-  /* ИСПРАВЛЕНИЕ МОДАЛКИ НА МОБИЛЬНЫХ */
+  /* --- ИСПРАВЛЕНИЕ МОДАЛКИ НА МОБИЛЬНЫХ --- */
   .modal-overlay{padding:0;align-items:stretch; overflow-y: auto;} 
   .modal{max-width:none;border-radius:0;min-height:100vh; display: flex; flex-direction: column; overflow: hidden;}
-  .modal-body{max-height:none;padding:16px; flex: 1; overflow-y: auto; padding-bottom: 80px;} 
-  .modal-foot{position:sticky;bottom:0;padding:16px; background: var(--bg-elev); z-index: 10;}
+  .modal-body{max-height:none;padding:16px; flex: 1; overflow-y: auto; padding-bottom: 100px;} /* Отступ снизу, чтобы кнопки не перекрывали поля */
+  .modal-foot{position:sticky;bottom:0;padding:16px; background: var(--bg-elev); z-index: 10; box-shadow: 0 -4px 12px rgba(0,0,0,0.3);} /* Тень, чтобы визуально отделить кнопки */
   
   .modal-foot .btn{flex:1;height:38px;justify-content:center}
   .form-row,.form-row.three{grid-template-columns:1fr}
