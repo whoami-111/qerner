@@ -23,6 +23,9 @@ RECAPTCHA_SECRET_KEY = "6LdrF_8tAAAAABmVfFkDvzTCopJMjf9NJeAPHGOn"
 app = Flask(__name__, static_folder=None)
 CORS(app, supports_credentials=True)
 
+# УВЕЛИЧИВАЕМ ЛИМИТ РАЗМЕРА ЗАПРОСА (чтобы фото не обрезались)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB
+
 SESSIONS = {}
 SESSION_TTL_HOURS = 24 * 7
 
@@ -333,7 +336,6 @@ def create_client():
     if existing:
         cid = existing["id"]
         order = existing["order_number"]
-        # Обновляем данные
         updates = []
         values = []
         for f in CLIENT_FIELDS:
