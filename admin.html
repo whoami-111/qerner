@@ -479,6 +479,102 @@ tbody tr:last-child td{border-bottom:none}
   .photo-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
   #toast{left:12px;right:12px;bottom:16px;max-width:none}
 }
+
+/* --- СТИЛИ ДЛЯ ПРЕМИУМ АНАЛИТИКИ --- */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1100px) {
+  .analytics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .analytics-grid { grid-template-columns: 1fr; }
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--info), transparent);
+  opacity: 0.5;
+}
+.stat-card.vip::before { background: linear-gradient(90deg, transparent, var(--vip), transparent); }
+.stat-card.lead::before { background: linear-gradient(90deg, transparent, var(--lead), transparent); }
+.stat-card.active::before { background: linear-gradient(90deg, transparent, var(--active), transparent); }
+
+.stat-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  margin-bottom: 16px;
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--info);
+}
+.stat-card.vip .stat-icon { background: rgba(163, 113, 247, 0.1); color: var(--vip); }
+.stat-card.lead .stat-icon { background: rgba(210, 153, 34, 0.1); color: var(--lead); }
+.stat-card.active .stat-icon { background: rgba(63, 185, 80, 0.1); color: var(--active); }
+
+.stat-label { font-size: 12px; color: var(--text-2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: 32px; font-weight: 700; color: var(--white); line-height: 1.2; margin-top: 4px; }
+.stat-sub { font-size: 12px; color: var(--text-3); margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+
+.chart-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+.chart-title {
+  font-size: 13px; font-weight: 600; color: var(--white); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+}
+.chart-title::before {
+  content: ''; display: block; width: 4px; height: 16px; background: var(--info); border-radius: 2px;
+}
+
+/* Донат-чарт */
+.donut-container { display: flex; align-items: center; justify-content: center; position: relative; height: 220px; }
+.donut-svg { width: 180px; height: 180px; transform: rotate(-90deg); }
+.donut-segment { transition: stroke-dasharray 0.5s ease; }
+.donut-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.donut-center-value { font-size: 24px; font-weight: 700; color: var(--white); line-height: 1; }
+.donut-center-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; margin-top: 4px; }
+
+.legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-value { margin-left: auto; font-family: var(--mono); font-weight: 600; color: var(--text); }
+
+/* Списки */
+.list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-soft); }
+.list-item:last-child { border-bottom: none; }
+.list-rank { width: 24px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--text-3); font-weight: 600; }
+.list-content { flex: 1; min-width: 0; }
+.list-title { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-bar-bg { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.list-bar-fill { height: 100%; background: var(--info); border-radius: 2px; }
+.list-value { font-family: var(--mono); font-size: 12px; color: var(--text-2); }
+
+/* Топ клиентов */
+.top-client-row { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
+.top-client-row:last-child { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -866,7 +962,7 @@ function uploadBackup(e) {
 } 
 window.uploadBackup = uploadBackup;
 
-// --- НОВАЯ КРАСИВАЯ АНАЛИТИКА ---
+// --- ПРЕМИУМ АНАЛИТИКА ---
 function renderAnalytics(){ 
   var clients = clientsCache; 
   var total = clients.length || 1;
@@ -879,17 +975,17 @@ function renderAnalytics(){
   // 2. Подсчет источников
   var srcStats = Object.keys(SOURCES).map(function(k){
     return { key: k, label: SOURCES[k].label, count: clients.filter(function(c){return c.source===k;}).length };
-  });
+  }).filter(function(s){return s.count > 0;});
   
   // 3. Подсчет техники
   var techStats = Object.keys(TECHNOLOGIES).map(function(k){
     return { key: k, label: TECHNOLOGIES[k], count: clients.filter(function(c){return c.tech_type===k;}).length };
-  });
+  }).filter(function(s){return s.count > 0;});
 
   // 4. Города
   var cities = {};
   clients.forEach(function(c){ if(c.city) cities[c.city] = (cities[c.city]||0)+1; });
-  var topCities = Object.keys(cities).map(function(k){return {name:k, count:cities[k]};}).sort(function(a,b){return b.count-a.count;}).slice(0,5);
+  var topCities = Object.keys(cities).map(function(k){return {name:k, count:cities[k]};}).sort(function(a,b){return b.count-a.count;}).slice(0, 5);
 
   // 5. Топ клиентов (VIP или просто последние)
   var topClients = clients.filter(function(c){return c.status==='vip';}).slice(0, 5);
@@ -898,37 +994,37 @@ function renderAnalytics(){
   // --- ГЕНЕРАЦИЯ HTML ---
   
   // KPI Карточки
-  var kpiHtml = '<div class="metrics" style="margin-bottom:24px">' +
-    '<div class="metric" style="padding:20px; border-radius:8px; background:var(--surface); border:1px solid var(--border)">' +
-      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-        '<div class="metric-label" style="color:var(--text-2)">Всього клієнтів</div>' +
-        '<span style="font-size:20px; opacity:0.5;">👥</span>' +
-      '</div>' +
-      '<div class="metric-value" style="font-size:36px; margin-top:10px; color:var(--white)">' + clients.length + '</div>' +
-      '<div class="metric-foot" style="color:var(--active)">' + Math.round(activeCount/total*100) + '% активних</div>' +
+  var kpiHtml = '<div class="analytics-grid">' +
+    '<div class="stat-card active">' +
+      '<div class="stat-icon">👥</div>' +
+      '<div class="stat-label">Всього клієнтів</div>' +
+      '<div class="stat-value">' + clients.length + '</div>' +
+      '<div class="stat-sub"><span style="color:var(--active)">↑ ' + Math.round(activeCount/total*100) + '%</span> активних</div>' +
     '</div>' +
-    '<div class="metric" style="padding:20px; border-radius:8px; background:var(--surface); border:1px solid var(--border)">' +
-      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-        '<div class="metric-label" style="color:var(--text-2)">VIP Клієнти</div>' +
-        '<span style="font-size:20px; opacity:0.5;">👑</span>' +
-      '</div>' +
-      '<div class="metric-value" style="font-size:36px; margin-top:10px; color:var(--vip)">' + vipCount + '</div>' +
-      '<div class="metric-foot" style="color:var(--text-3)">Найвищий пріоритет</div>' +
+    '<div class="stat-card vip">' +
+      '<div class="stat-icon">👑</div>' +
+      '<div class="stat-label">VIP Клієнти</div>' +
+      '<div class="stat-value">' + vipCount + '</div>' +
+      '<div class="stat-sub">Найвищий пріоритет</div>' +
     '</div>' +
-    '<div class="metric" style="padding:20px; border-radius:8px; background:var(--surface); border:1px solid var(--border)">' +
-      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-        '<div class="metric-label" style="color:var(--text-2)">В обробці (Ліди)</div>' +
-        '<span style="font-size:20px; opacity:0.5;">🔥</span>' +
-      '</div>' +
-      '<div class="metric-value" style="font-size:36px; margin-top:10px; color:var(--lead)">' + leadCount + '</div>' +
-      '<div class="metric-foot" style="color:var(--text-3)">Потребують уваги</div>' +
+    '<div class="stat-card lead">' +
+      '<div class="stat-icon">🔥</div>' +
+      '<div class="stat-label">В обробці (Ліди)</div>' +
+      '<div class="stat-value">' + leadCount + '</div>' +
+      '<div class="stat-sub">Потребують уваги</div>' +
+    '</div>' +
+    '<div class="stat-card">' +
+      '<div class="stat-icon">⚡</div>' +
+      '<div class="stat-label">Сер. чек / Активність</div>' +
+      '<div class="stat-value" style="font-size:24px;">—</div>' +
+      '<div class="stat-sub">Незабаром</div>' +
     '</div>' +
   '</div>';
 
   // Donut Chart для Источников
-  var srcHtml = '<div class="panel" style="border-radius:8px; background:var(--surface);">' +
-    '<div class="panel-head" style="border-bottom:none; padding-bottom:0;"><div class="panel-title" style="color:var(--text)">ДЖЕРЕЛА КЛІЄНТІВ</div></div>' +
-    '<div class="panel-body" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:250px;">';
+  var srcHtml = '<div class="chart-panel">' +
+    '<div class="chart-title">ДЖЕРЕЛА КЛІЄНТІВ</div>' +
+    '<div class="donut-container">';
     
     // Рисуем SVG круговую диаграмму
     var totalSrc = srcStats.reduce(function(a,b){return a+b.count;},0) || 1;
@@ -941,24 +1037,29 @@ function renderAnalytics(){
       if (percent > 0) {
         var strokeDasharray = percent + ' ' + (100 - percent);
         var strokeDashoffset = 25 - cumulativePercent;
-        svgContent += '<circle cx="50" cy="50" r="40" fill="transparent" stroke="'+colors[s.key]+'" stroke-width="20" stroke-dasharray="'+strokeDasharray+'" stroke-dashoffset="'+strokeDashoffset+'"></circle>';
+        svgContent += '<circle class="donut-segment" cx="50" cy="50" r="40" fill="transparent" stroke="'+colors[s.key]+'" stroke-width="12" stroke-dasharray="'+strokeDasharray+'" stroke-dashoffset="'+strokeDashoffset+'"></circle>';
         cumulativePercent += percent;
       }
     });
 
-    srcHtml += '<svg viewBox="0 0 100 100" style="width:180px; height:180px; transform: rotate(-90deg);">' + svgContent + '</svg>';
+    srcHtml += '<svg class="donut-svg" viewBox="0 0 100 100">' + svgContent + '</svg>';
+    srcHtml += '<div class="donut-center-text">' +
+      '<div class="donut-center-value">' + totalSrc + '</div>' +
+      '<div class="donut-center-label">Всього</div>' +
+    '</div>';
+    
+    srcHtml += '</div>';
     
     // Легенда
-    srcHtml += '<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:20px;">';
+    srcHtml += '<div class="legend-grid">';
     srcStats.forEach(function(s){
-       srcHtml += '<div style="display:flex; align-items:center; gap:6px; font-size:12px;"><span style="width:10px; height:10px; border-radius:50%; background:'+colors[s.key]+'"></span>'+s.label+' ('+s.count+')</div>';
+       srcHtml += '<div class="legend-item"><span class="legend-dot" style="background:'+colors[s.key]+'"></span>'+s.label+'<span class="legend-value">'+s.count+'</span></div>';
     });
-    srcHtml += '</div></div></div>';
+    srcHtml += '</div></div>';
 
   // Progress Bars для Техники
-  var techHtml = '<div class="panel" style="border-radius:8px; background:var(--surface);">' +
-    '<div class="panel-head" style="border-bottom:none; padding-bottom:0;"><div class="panel-title" style="color:var(--text)">ТЕХНІКА</div></div>' +
-    '<div class="panel-body">';
+  var techHtml = '<div class="chart-panel">' +
+    '<div class="chart-title">ТЕХНІКА</div>';
     var maxTech = Math.max.apply(null, techStats.map(function(x){return x.count;}).concat([1]));
     techStats.forEach(function(s){
       var percent = Math.round(s.count / maxTech * 100);
@@ -972,12 +1073,11 @@ function renderAnalytics(){
         '</div>' +
       '</div>';
     });
-    techHtml += '</div></div>';
+    techHtml += '</div>';
 
   // Города (Рейтинг)
-  var cityHtml = '<div class="panel" style="border-radius:8px; background:var(--surface);">' +
-    '<div class="panel-head" style="border-bottom:none; padding-bottom:0;"><div class="panel-title" style="color:var(--text)">ГЕОГРАФІЯ (ТОП-5)</div></div>' +
-    '<div class="panel-body">';
+  var cityHtml = '<div class="chart-panel">' +
+    '<div class="chart-title">ГЕОГРАФІЯ (ТОП-5)</div>';
     if(topCities.length === 0) {
       cityHtml += '<div class="empty" style="padding:20px 0">Немає даних</div>';
     } else {
@@ -998,19 +1098,17 @@ function renderAnalytics(){
         '</div>';
       });
     }
-    cityHtml += '</div></div>';
+    cityHtml += '</div>';
 
   // Топ клиентов
-  var topClientsHtml = '<div class="panel" style="border-radius:8px; background:var(--surface); grid-column: 1 / -1;">' +
-    '<div class="panel-head" style="border-bottom:none; padding-bottom:0;"><div class="panel-title" style="color:var(--text)">ТОП КЛІЄНТІВ</div></div>' +
-    '<div class="panel-body">';
+  var topClientsHtml = '<div class="chart-panel">' +
+    '<div class="chart-title">ТОП КЛІЄНТІВ</div>';
     if(topClients.length === 0) {
       topClientsHtml += '<div class="empty" style="padding:20px 0">Немає даних</div>';
     } else {
-      topClientsHtml += '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px;">';
       topClients.forEach(function(c){
-         topClientsHtml += '<div style="background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:12px; display:flex; align-items:center; gap:10px;">' +
-            '<div class="cell-avatar" style="width:36px; height:36px; font-size:14px;">' + initials(c.full_name) + '</div>' +
+         topClientsHtml += '<div class="top-client-row">' +
+            '<div class="cell-avatar" style="width:32px; height:32px; font-size:12px;">' + initials(c.full_name) + '</div>' +
             '<div style="flex:1; min-width:0;">' +
                '<div style="font-size:13px; font-weight:600; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(c.full_name) + '</div>' +
                '<div style="font-size:11px; color:var(--text-3); font-family:var(--mono);">' + (c.order_number||'') + '</div>' +
@@ -1018,9 +1116,8 @@ function renderAnalytics(){
             (c.status==='vip' ? '<span style="font-size:16px;">👑</span>' : '') +
          '</div>';
       });
-      topClientsHtml += '</div>';
     }
-    topClientsHtml += '</div></div>';
+    topClientsHtml += '</div>';
 
   // Собираем все вместе
   document.getElementById('analytics-view').innerHTML = 
