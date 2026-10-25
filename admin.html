@@ -510,6 +510,7 @@ tbody tr:last-child td{border-bottom:none}
 .stat-card.active::before { background: var(--active); }
 .stat-card.vip::before { background: var(--vip); }
 .stat-card.lead::before { background: var(--lead); }
+.stat-card.money::before { background: var(--active); }
 
 .stat-icon {
   width: 32px; height: 32px;
@@ -523,6 +524,7 @@ tbody tr:last-child td{border-bottom:none}
 .stat-card.vip .stat-icon { color: var(--vip); }
 .stat-card.lead .stat-icon { color: var(--lead); }
 .stat-card.active .stat-icon { color: var(--active); }
+.stat-card.money .stat-icon { color: var(--active); }
 
 .stat-label { font-size: 11px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 .stat-value { font-size: 24px; font-weight: 700; color: var(--white); line-height: 1.2; margin-top: 4px; }
@@ -567,6 +569,12 @@ tbody tr:last-child td{border-bottom:none}
 /* Топ клиентов */
 .top-client-row { display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; }
 .top-client-row:last-child { margin-bottom: 0; }
+
+/* Финансы */
+.finance-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 13px; }
+.finance-row:last-child { border-bottom: none; }
+.finance-label { color: var(--text-2); }
+.finance-value { font-family: var(--mono); font-weight: 600; color: var(--white); }
 </style>
 </head>
 <body>
@@ -954,10 +962,14 @@ function uploadBackup(e) {
 } 
 window.uploadBackup = uploadBackup;
 
-// --- КОМПАКТНАЯ АНАЛИТИКА ---
-function renderAnalytics(){ 
+// --- КОМПАКТНАЯ АНАЛИТИКА С ФИНАНСАМИ ---
+async function renderAnalytics(){ 
   var clients = clientsCache; 
   var total = clients.length || 1;
+  
+  // Получаем финансы
+  var finance = { investment: 0, current_amount: 0 };
+  try { finance = await api('/api/finance'); } catch(e) {}
   
   // 1. Подсчет данных
   var activeCount = clients.filter(function(c){return c.status==='active';}).length;
@@ -1005,11 +1017,25 @@ function renderAnalytics(){
       '<div class="stat-value">' + leadCount + '</div>' +
       '<div class="stat-sub">Потребують уваги</div>' +
     '</div>' +
-    '<div class="stat-card">' +
-      '<div class="stat-icon">📈</div>' +
-      '<div class="stat-label">Конверсія</div>' +
-      '<div class="stat-value">' + (leadCount>0 ? Math.round((activeCount/leadCount)*100) : 0) + '%</div>' +
-      '<div class="stat-sub">Ліди → Активні</div>' +
+    '<div class="stat-card money">' +
+      '<div class="stat-icon">💰</div>' +
+      '<div class="stat-label">Чистий прибуток</div>' +
+      '<div class="stat-value">' + (finance.current_amount - finance.investment).toLocaleString('uk-UA') + ' ₴</div>' +
+      '<div class="stat-sub">Поточні - Вкладення</div>' +
+    '</div>' +
+  '</div>';
+
+  // Финансовая панель
+  var financeHtml = '<div class="chart-panel" style="margin-bottom:16px;">' +
+    '<div class="chart-title" style="justify-content:space-between;">' +
+      '<span>ФІНАНСИ</span>' +
+      '<button class="btn sm" onclick="openFinanceForm('+finance.investment+','+finance.current_amount+')">Редагувати</button>' +
+    '</div>' +
+    '<div class="finance-row"><span class="finance-label">Вкладення (0)</span><span class="finance-value">' + finance.investment.toLocaleString('uk-UA') + ' ₴</span></div>' +
+    '<div class="finance-row"><span class="finance-label">Текущие средства</span><span class="finance-value">' + finance.current_amount.toLocaleString('uk-UA') + ' ₴</span></div>' +
+    '<div class="finance-row" style="border-top:1px solid var(--border); margin-top:4px; padding-top:8px;">' +
+      '<span class="finance-label" style="color:var(--white); font-weight:600;">Общий оборот</span>' +
+      '<span class="finance-value" style="color:var(--info); font-size:15px;">' + (finance.investment + finance.current_amount).toLocaleString('uk-UA') + ' ₴</span>' +
     '</div>' +
   '</div>';
 
@@ -1114,9 +1140,41 @@ function renderAnalytics(){
   // Собираем все вместе
   document.getElementById('analytics-view').innerHTML = 
     kpiHtml + 
-    '<div class="grid-2" style="margin-bottom:16px;">' + srcHtml + techHtml + '</div>' + 
-    '<div class="grid-2">' + cityHtml + topClientsHtml + '</div>';
+    '<div class="grid-2" style="margin-bottom:16px;">' + financeHtml + srcHtml + '</div>' + 
+    '<div class="grid-2">' + techHtml + cityHtml + '</div>' +
+    '<div class="grid-2" style="margin-top:16px;">' + topClientsHtml + '</div>';
 }
+
+// Модалка для ввода финансов
+function openFinanceForm(inv, cur) {
+    document.getElementById('modal-title').textContent = 'Редагувати фінанси';
+    var html = '<form onsubmit="saveFinance(event)">' +
+      '<div class="modal-body">' +
+        '<div class="form-row full"><div class="form-group"><label>Вкладення (витрати)</label><input class="form-input mono" type="number" step="0.01" id="fin-inv" value="' + inv + '" required></div></div>' +
+        '<div class="form-row full"><div class="form-group"><label>Поточні кошти (каса)</label><input class="form-input mono" type="number" step="0.01" id="fin-cur" value="' + cur + '" required></div></div>' +
+      '</div>' +
+      '<div class="modal-foot"><button type="button" class="btn" onclick="closeModal()">Скасувати</button><button type="submit" class="btn primary">Зберегти</button></div>' +
+    '</form>';
+    document.getElementById('modal-content').innerHTML = html;
+    document.getElementById('modal').classList.add('open');
+}
+window.openFinanceForm = openFinanceForm;
+
+async function saveFinance(e) {
+    e.preventDefault();
+    var inv = parseFloat(document.getElementById('fin-inv').value) || 0;
+    var cur = parseFloat(document.getElementById('fin-cur').value) || 0;
+    try {
+        await api('/api/finance', { method: 'POST', body: { investment: inv, current_amount: cur } });
+        toast('Фінанси оновлено');
+        closeModal();
+        renderAnalytics();
+    } catch(err) {
+        toast(err.message, true);
+    }
+    return false;
+}
+window.saveFinance = saveFinance;
 
 async function renderAudit(){ var logs=[]; try{ logs = await api('/api/audit'); }catch(e){} if(!logs.length){ document.getElementById('audit-table').innerHTML = emptyState('▦', tr('msg_error') || 'Журнал порожній', ''); return; } var labels={ login:'Вхід', login_fail:'Невдалий вхід', logout:'Вихід', client_create:'Створення', client_update:'Оновлення', client_delete:'Видалення', interaction_add:'Взаємодія', password_change:'Пароль', user_create:'Юзер+', user_update:'Юзер~', user_delete:'Юзер-', lang_change:'Мова', srm_sync:'SRM', audit_clear:'Очищення', username_change: 'Зміна логіну', db_restore: 'Відновлення БД' }; var html = '<table><thead><tr>'+ '<th>'+tr('audit_time')+'</th>'+ '<th>'+tr('audit_user')+'</th>'+ '<th>IP</th>'+ '<th>'+tr('audit_action')+'</th>'+ '<th>'+tr('audit_obj')+'</th>'+ '</tr></thead><tbody>'; var mobHtml = ''; logs.slice(0, 300).forEach(function(l){ var userTxt = l.user_name || 'system'; var ipTxt = l.ip || '—'; var objTxt = l.entity || '—'; var actionTxt = labels[l.action] || l.action; var userColor = 'var(--text)'; var userBorder = 'transparent'; if (userTxt === 'root') { userColor = '#fbbf24'; userBorder = 'rgba(251,191,36,.4)'; } else if (userTxt === 'admin') { userColor = 'var(--vip)'; userBorder = 'rgba(163,113,247,.4)'; } else if (userTxt !== 'system') { userColor = 'var(--info)'; userBorder = 'rgba(88,166,255,.4)'; } var userHtml = '<span style="font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:4px;border:1px solid '+userBorder+';color:'+userColor+'">'+esc(userTxt)+'</span>'; var isOrder = /^[A-Z0-9]+-\d{6}$/.test(objTxt); var objHtml = isOrder ? '<a href="#" onclick="showQuickClient(\''+objTxt+'\');return false" style="color:var(--info);text-decoration:underline;font-weight:600;font-family:var(--mono)">'+objTxt+'</a>' : '<span style="font-family:var(--mono);color:var(--text-2)">'+objTxt+'</span>'; html += '<tr>'+ '<td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3);white-space:nowrap">'+fmtDate(l.created_at)+'</td>'+ '<td>'+userHtml+'</td>'+ '<td style="font-family:var(--mono);font-size:11.5px;color:var(--text-3)">'+esc(ipTxt)+'</td>'+ '<td><span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;text-transform:uppercase">'+esc(actionTxt)+'</span></td>'+ '<td style="font-size:12.5px">'+objHtml+'</td>'+ '</tr>'; mobHtml += '<div class="mob-card" style="margin-bottom:8px;padding:12px">'+ '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+ '<span style="font-family:var(--mono);font-size:11px;color:var(--text-3)">'+fmtDate(l.created_at)+'</span>'+ '<span style="font-family:var(--mono);font-size:10.5px;padding:2px 6px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;text-transform:uppercase">'+esc(actionTxt)+'</span>'+ '</div>'+ '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px">'+ '<span style="color:var(--text-2)">'+tr('audit_user')+':</span>'+ userHtml+ '</div>'+ '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">'+ '<span style="color:var(--text-2)">IP:</span>'+ '<span style="font-family:var(--mono);color:var(--text-3)">'+esc(ipTxt)+'</span>'+ '</div>'+ '<div style="display:flex;justify-content:space-between;font-size:12px;align-items:center">'+ '<span style="color:var(--text-2)">'+tr('audit_obj')+':</span>'+ '<span>'+objHtml+'</span>'+ '</div>'+ '</div>'; }); html += '</tbody></table>'; document.getElementById('audit-table').innerHTML = html; document.getElementById('audit-mobile').innerHTML = mobHtml; }
 
